@@ -17,9 +17,32 @@ struct ContentView: View {
             List {
                 ForEach(items) { item in
                     NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                        Text(
+                            "Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))"
+                        )
                     } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                        Text(
+                            item.timestamp,
+                            format: Date.FormatStyle(
+                                date: .numeric,
+                                time: .standard
+                            )
+                        )
+                    }
+                    .contextMenu {
+                        // delete button
+                        Button(
+                            role: .destructive,
+                            action: {
+                                if let index = items.firstIndex(where: {
+                                    $0.id == item.id
+                                }) {
+                                    deleteItems(offsets: IndexSet([index]))
+                                }
+                            }
+                        ) {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
                 .onDelete(perform: deleteItems)
