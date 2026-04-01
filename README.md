@@ -53,3 +53,37 @@ This structure keeps features modular, testable, and easy to evolve.
 ## 🎯 In short
 
 **Simulator Manager is a modern simulator operations hub for iOS developers and QA engineers who want speed, clarity, and control.**
+
+---
+
+## 📸 Screenshots
+
+### 🧭 Manage simulators in one place
+
+Get a unified control center to view, filter, boot, and manage your available iOS simulators from a single interface.
+
+![Manage simulators in one place](<Screenshots/manage simulators in one place.png>)
+
+### 📦 Add files with ease to your simulator
+
+Quickly push files into simulator containers and streamline data setup workflows for testing and debugging.
+
+![Add files with ease to your simulator](<Screenshots/add files with ease to your simulator.png>)
+
+### 🔎 Search apps and files across all simulators
+
+Instantly find installed apps and related files using fast cross-simulator search by name, bundle ID, and other metadata.
+
+![Search apps and files across all simulators](<Screenshots/search apps and files accross all  of your simulators.png>)
+
+### 🧪 Testing toolkit for realistic scenarios
+
+Simulate real-world conditions with controls for localization, battery percentage overrides, and other test-focused utilities.
+
+![Testing toolkit capable of changing localisation, overriding battery percentage and more](<Screenshots/testing toolkit capable of changing localisation, overriding battery percentage and more.png>)
+
+### 📜 Watch logs of a specific simulator
+
+Track and inspect simulator logs in real time to debug behavior faster and keep QA sessions focused.
+
+![Watch logs of certain simulator](<Screenshots/watch logs of certain simulator.png>)
