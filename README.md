@@ -1,5 +1,7 @@
 # Simulator Manager
 
+![Simulator Manager Logo](SimulatorManager/Assets.xcassets/AppIcon.appiconset/1024.png)
+
 A polished macOS control center for iOS Simulators, built with **SwiftUI* and powered by `xcrun simctl`.
 Vibe coded with care for fast iteration and developer flow.
 
