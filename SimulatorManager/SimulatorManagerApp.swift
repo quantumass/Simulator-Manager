@@ -1,6 +1,6 @@
 //
-//  ViperArchitectureApp.swift
-//  ViperArchitecture
+//  SimulatorManagerApp.swift
+//  SimulatorManager
 //
 //  Created by Prana dhika on 04/03/25.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct ViperArchitectureApp: App {
+struct SimulatorManagerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

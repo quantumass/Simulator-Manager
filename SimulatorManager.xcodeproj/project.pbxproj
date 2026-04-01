@@ -12,37 +12,37 @@
 			containerPortal = 26D2A4E32D76D61D00B2C249 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 26D2A4EA2D76D61D00B2C249;
-			remoteInfo = ViperArchitecture;
+			remoteInfo = SimulatorManager;
 		};
 		26D2A5092D76D61F00B2C249 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 26D2A4E32D76D61D00B2C249 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 26D2A4EA2D76D61D00B2C249;
-			remoteInfo = ViperArchitecture;
+			remoteInfo = SimulatorManager;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		26D2A4EB2D76D61D00B2C249 /* ViperArchitecture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ViperArchitecture.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		26D2A4FE2D76D61F00B2C249 /* ViperArchitectureTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ViperArchitectureTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		26D2A5082D76D61F00B2C249 /* ViperArchitectureUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ViperArchitectureUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		26D2A4EB2D76D61D00B2C249 /* SimulatorManager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimulatorManager.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		26D2A4FE2D76D61F00B2C249 /* SimulatorManagerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		26D2A5082D76D61F00B2C249 /* SimulatorManagerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SimulatorManagerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		26D2A4ED2D76D61D00B2C249 /* ViperArchitecture */ = {
+		26D2A4ED2D76D61D00B2C249 /* SimulatorManager */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ViperArchitecture;
+			path = SimulatorManager;
 			sourceTree = "<group>";
 		};
-		26D2A5012D76D61F00B2C249 /* ViperArchitectureTests */ = {
+		26D2A5012D76D61F00B2C249 /* SimulatorManagerTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ViperArchitectureTests;
+			path = SimulatorManagerTests;
 			sourceTree = "<group>";
 		};
-		26D2A50B2D76D61F00B2C249 /* ViperArchitectureUITests */ = {
+		26D2A50B2D76D61F00B2C249 /* SimulatorManagerUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ViperArchitectureUITests;
+			path = SimulatorManagerUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		26D2A4E22D76D61D00B2C249 = {
 			isa = PBXGroup;
 			children = (
-				26D2A4ED2D76D61D00B2C249 /* ViperArchitecture */,
-				26D2A5012D76D61F00B2C249 /* ViperArchitectureTests */,
-				26D2A50B2D76D61F00B2C249 /* ViperArchitectureUITests */,
+				26D2A4ED2D76D61D00B2C249 /* SimulatorManager */,
+				26D2A5012D76D61F00B2C249 /* SimulatorManagerTests */,
+				26D2A50B2D76D61F00B2C249 /* SimulatorManagerUITests */,
 				26D2A4EC2D76D61D00B2C249 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +85,9 @@
 		26D2A4EC2D76D61D00B2C249 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				26D2A4EB2D76D61D00B2C249 /* ViperArchitecture.app */,
-				26D2A4FE2D76D61F00B2C249 /* ViperArchitectureTests.xctest */,
-				26D2A5082D76D61F00B2C249 /* ViperArchitectureUITests.xctest */,
+				26D2A4EB2D76D61D00B2C249 /* SimulatorManager.app */,
+				26D2A4FE2D76D61F00B2C249 /* SimulatorManagerTests.xctest */,
+				26D2A5082D76D61F00B2C249 /* SimulatorManagerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		26D2A4EA2D76D61D00B2C249 /* ViperArchitecture */ = {
+		26D2A4EA2D76D61D00B2C249 /* SimulatorManager */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 26D2A5122D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "ViperArchitecture" */;
+			buildConfigurationList = 26D2A5122D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "SimulatorManager" */;
 			buildPhases = (
 				26D2A4E72D76D61D00B2C249 /* Sources */,
 				26D2A4E82D76D61D00B2C249 /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				26D2A4ED2D76D61D00B2C249 /* ViperArchitecture */,
+				26D2A4ED2D76D61D00B2C249 /* SimulatorManager */,
 			);
-			name = ViperArchitecture;
+			name = SimulatorManager;
 			packageProductDependencies = (
 			);
-			productName = ViperArchitecture;
-			productReference = 26D2A4EB2D76D61D00B2C249 /* ViperArchitecture.app */;
+			productName = SimulatorManager;
+			productReference = 26D2A4EB2D76D61D00B2C249 /* SimulatorManager.app */;
 			productType = "com.apple.product-type.application";
 		};
-		26D2A4FD2D76D61F00B2C249 /* ViperArchitectureTests */ = {
+		26D2A4FD2D76D61F00B2C249 /* SimulatorManagerTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 26D2A5152D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "ViperArchitectureTests" */;
+			buildConfigurationList = 26D2A5152D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "SimulatorManagerTests" */;
 			buildPhases = (
 				26D2A4FA2D76D61F00B2C249 /* Sources */,
 				26D2A4FB2D76D61F00B2C249 /* Frameworks */,
@@ -131,18 +131,18 @@
 				26D2A5002D76D61F00B2C249 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				26D2A5012D76D61F00B2C249 /* ViperArchitectureTests */,
+				26D2A5012D76D61F00B2C249 /* SimulatorManagerTests */,
 			);
-			name = ViperArchitectureTests;
+			name = SimulatorManagerTests;
 			packageProductDependencies = (
 			);
-			productName = ViperArchitectureTests;
-			productReference = 26D2A4FE2D76D61F00B2C249 /* ViperArchitectureTests.xctest */;
+			productName = SimulatorManagerTests;
+			productReference = 26D2A4FE2D76D61F00B2C249 /* SimulatorManagerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		26D2A5072D76D61F00B2C249 /* ViperArchitectureUITests */ = {
+		26D2A5072D76D61F00B2C249 /* SimulatorManagerUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 26D2A5182D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "ViperArchitectureUITests" */;
+			buildConfigurationList = 26D2A5182D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "SimulatorManagerUITests" */;
 			buildPhases = (
 				26D2A5042D76D61F00B2C249 /* Sources */,
 				26D2A5052D76D61F00B2C249 /* Frameworks */,
@@ -154,13 +154,13 @@
 				26D2A50A2D76D61F00B2C249 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				26D2A50B2D76D61F00B2C249 /* ViperArchitectureUITests */,
+				26D2A50B2D76D61F00B2C249 /* SimulatorManagerUITests */,
 			);
-			name = ViperArchitectureUITests;
+			name = SimulatorManagerUITests;
 			packageProductDependencies = (
 			);
-			productName = ViperArchitectureUITests;
-			productReference = 26D2A5082D76D61F00B2C249 /* ViperArchitectureUITests.xctest */;
+			productName = SimulatorManagerUITests;
+			productReference = 26D2A5082D76D61F00B2C249 /* SimulatorManagerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				26D2A4EA2D76D61D00B2C249 /* ViperArchitecture */,
-				26D2A4FD2D76D61F00B2C249 /* ViperArchitectureTests */,
-				26D2A5072D76D61F00B2C249 /* ViperArchitectureUITests */,
+				26D2A4EA2D76D61D00B2C249 /* SimulatorManager */,
+				26D2A4FD2D76D61F00B2C249 /* SimulatorManagerTests */,
+				26D2A5072D76D61F00B2C249 /* SimulatorManagerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		26D2A5002D76D61F00B2C249 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 26D2A4EA2D76D61D00B2C249 /* ViperArchitecture */;
+			target = 26D2A4EA2D76D61D00B2C249 /* SimulatorManager */;
 			targetProxy = 26D2A4FF2D76D61F00B2C249 /* PBXContainerItemProxy */;
 		};
 		26D2A50A2D76D61F00B2C249 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 26D2A4EA2D76D61D00B2C249 /* ViperArchitecture */;
+			target = 26D2A4EA2D76D61D00B2C249 /* SimulatorManager */;
 			targetProxy = 26D2A5092D76D61F00B2C249 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -392,16 +392,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ViperArchitecture/ViperArchitecture.entitlements;
+				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"ViperArchitecture/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = N3F865G5UB;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Viper Architecture";
+				INFOPLIST_KEY_CFBundleDisplayName = "Simulator Manager";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -409,7 +409,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.garyle.ViperArchitecture;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otter.simulatormanager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -421,11 +421,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ViperArchitecture/ViperArchitecture.entitlements;
+				CODE_SIGN_ENTITLEMENTS = SimulatorManager/SimulatorManager.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"ViperArchitecture/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"SimulatorManager/Preview Content\"";
 				DEVELOPMENT_TEAM = N3F865G5UB;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -438,7 +438,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.garyle.ViperArchitecture;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otter.SimulatorManager;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -455,11 +455,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.garyle.ViperArchitectureTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otter.SimulatorManagerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ViperArchitecture.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ViperArchitecture";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimulatorManager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimulatorManager";
 			};
 			name = Debug;
 		};
@@ -473,11 +473,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.garyle.ViperArchitectureTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otter.SimulatorManagerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ViperArchitecture.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ViperArchitecture";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SimulatorManager.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SimulatorManager";
 			};
 			name = Release;
 		};
@@ -489,11 +489,11 @@
 				DEVELOPMENT_TEAM = KH5Q8UWSWY;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.garyle.ViperArchitectureUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otter.SimulatorManagerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = ViperArchitecture;
+				TEST_TARGET_NAME = SimulatorManager;
 			};
 			name = Debug;
 		};
@@ -505,11 +505,11 @@
 				DEVELOPMENT_TEAM = KH5Q8UWSWY;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.garyle.ViperArchitectureUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otter.SimulatorManagerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = ViperArchitecture;
+				TEST_TARGET_NAME = SimulatorManager;
 			};
 			name = Release;
 		};
@@ -525,7 +525,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		26D2A5122D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "ViperArchitecture" */ = {
+		26D2A5122D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "SimulatorManager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				26D2A5132D76D61F00B2C249 /* Debug */,
@@ -534,7 +534,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		26D2A5152D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "ViperArchitectureTests" */ = {
+		26D2A5152D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "SimulatorManagerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				26D2A5162D76D61F00B2C249 /* Debug */,
@@ -543,7 +543,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		26D2A5182D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "ViperArchitectureUITests" */ = {
+		26D2A5182D76D61F00B2C249 /* Build configuration list for PBXNativeTarget "SimulatorManagerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				26D2A5192D76D61F00B2C249 /* Debug */,

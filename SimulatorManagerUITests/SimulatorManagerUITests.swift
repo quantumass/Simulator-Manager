@@ -1,13 +1,13 @@
 //
-//  ViperArchitectureUITests.swift
-//  ViperArchitectureUITests
+//  SimulatorManagerUITests.swift
+//  SimulatorManagerUITests
 //
 //  Created by Prana dhika on 04/03/25.
 //
 
 import XCTest
 
-final class ViperArchitectureUITests: XCTestCase {
+final class SimulatorManagerUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

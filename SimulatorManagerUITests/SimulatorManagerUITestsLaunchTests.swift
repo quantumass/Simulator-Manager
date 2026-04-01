@@ -1,13 +1,13 @@
 //
-//  ViperArchitectureUITestsLaunchTests.swift
-//  ViperArchitectureUITests
+//  SimulatorManagerUITestsLaunchTests.swift
+//  SimulatorManagerUITests
 //
 //  Created by Prana dhika on 04/03/25.
 //
 
 import XCTest
 
-final class ViperArchitectureUITestsLaunchTests: XCTestCase {
+final class SimulatorManagerUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
