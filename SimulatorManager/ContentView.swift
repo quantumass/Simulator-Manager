@@ -290,6 +290,93 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     if let selectedSimulator = presenter.selectedSimulator {
                         SimulatorQuickActionsBar(presenter: presenter, simulator: selectedSimulator)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.down.app.fill")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                                Text("Install Source")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Text("Install a build directly from a .app or .ipa file.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(
+                                        Color(nsColor: .separatorColor).opacity(0.5),
+                                        style: StrokeStyle(lineWidth: 1.5, dash: [5, 3])
+                                    )
+                                VStack(spacing: 6) {
+                                    Image(systemName: "arrow.down.app")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(.tertiary)
+                                    if presenter.installFilePath.isEmpty {
+                                        Text("Drop .app or .ipa here")
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.tertiary)
+                                    } else {
+                                        Text((presenter.installFilePath as NSString).lastPathComponent)
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                    }
+                                }
+                                .padding(.horizontal, 8)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 72)
+
+                            HStack(spacing: 6) {
+                                Text("or")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.tertiary)
+                                Button("browse file…") { Task { await presenter.pickInstallFile() } }
+                                    .buttonStyle(.plain)
+                                    .font(.system(size: 11))
+                                    .disabled(presenter.isInstallingAppFile)
+
+                                if !presenter.installFilePath.isEmpty {
+                                    Button {
+                                        presenter.installFilePath = ""
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(presenter.isInstallingAppFile)
+                                }
+
+                                Spacer()
+
+                                if presenter.isInstallingAppFile {
+                                    HStack(spacing: 6) {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                        Text("Installing…")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                Button(presenter.isInstallingAppFile ? "Installing…" : "Install") {
+                                    Task { await presenter.installSelectedAppFile() }
+                                }
+                                    .buttonStyle(.borderedProminent)
+                                    .controlSize(.small)
+                                    .disabled(presenter.installFilePath.isEmpty || presenter.isInstallingAppFile)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                        )
                     }
 
                     LazyVGrid(
@@ -613,17 +700,10 @@ private struct SimulatorQuickActionsBar: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(simulator.isBooted ? .red : .accentColor)
-
                 QuickActionButton(label: "Open Simulator", icon: "macwindow") {
                     Task { await presenter.openSimulator(simulator) }
                 }
-                QuickActionButton(label: "Erase", icon: "trash") {
-                    Task { await presenter.erase(simulator) }
-                }
-                QuickActionButton(label: "Data Folder", icon: "folder") {
-                    Task { await presenter.openSimulatorDataFolder(simulator) }
-                }
-
+                
                 Spacer()
 
                 // Simulator name badge
@@ -636,97 +716,24 @@ private struct SimulatorQuickActionsBar: View {
                         .foregroundStyle(.secondary)
                 }
             }
-
+            
             Divider()
                 .overlay(Color(nsColor: .separatorColor).opacity(0.3))
-
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.app.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    Text("Install Source")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
+            
+            HStack(spacing: 8) {
+                QuickActionButton(label: "Erase", icon: "trash") {
+                    Task { await presenter.erase(simulator) }
                 }
-
-                Text("Install a build directly from a .app or .ipa file.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(
-                            Color(nsColor: .separatorColor).opacity(0.5),
-                            style: StrokeStyle(lineWidth: 1.5, dash: [5, 3])
-                        )
-                    VStack(spacing: 6) {
-                        Image(systemName: "arrow.down.app")
-                            .font(.system(size: 22))
-                            .foregroundStyle(.tertiary)
-                        if presenter.installFilePath.isEmpty {
-                            Text("Drop .app or .ipa here")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.tertiary)
-                        } else {
-                            Text((presenter.installFilePath as NSString).lastPathComponent)
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                    }
-                    .padding(.horizontal, 8)
+                QuickActionButton(label: "Reset Keychain", icon: "key.fill") {
+                    Task { await presenter.resetKeychain() }
                 }
-                .frame(maxWidth: .infinity, minHeight: 72)
-
-                HStack(spacing: 6) {
-                    Text("or")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                    Button("browse file…") { Task { await presenter.pickInstallFile() } }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 11))
-                        .disabled(presenter.isInstallingAppFile)
-
-                    if !presenter.installFilePath.isEmpty {
-                        Button {
-                            presenter.installFilePath = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.tertiary)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(presenter.isInstallingAppFile)
-                    }
-
-                    Spacer()
-
-                    if presenter.isInstallingAppFile {
-                        HStack(spacing: 6) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Installing…")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Button(presenter.isInstallingAppFile ? "Installing…" : "Install") {
-                        Task { await presenter.installSelectedAppFile() }
-                    }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .disabled(presenter.installFilePath.isEmpty || presenter.isInstallingAppFile)
+                QuickActionButton(label: "iCloud Sync", icon: "icloud.and.arrow.down.fill") {
+                    Task { await presenter.triggeriCloudSync() }
+                }
+                QuickActionButton(label: "Data Folder", icon: "folder") {
+                    Task { await presenter.openSimulatorDataFolder(simulator) }
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
-            )
         }
         .padding(12)
         .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
@@ -1006,7 +1013,7 @@ private struct AppAdvancedPopup: View {
                             }
                             .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                             .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
+                            .padding(.vertical, 14)
 
                             Rectangle()
                                 .fill(isSelected ? Color.accentColor : Color.clear)
@@ -1080,60 +1087,76 @@ private struct AppBundleIcon: View {
     }
 
     private var resolvedIcon: NSImage? {
-        let plistPath = URL(fileURLWithPath: bundlePath).appendingPathComponent("Info.plist").path
-        guard
-            FileManager.default.fileExists(atPath: plistPath),
-            let plist = NSDictionary(contentsOfFile: plistPath) as? [String: Any]
-        else {
+        let bundleURL = URL(fileURLWithPath: bundlePath)
+        let plistURL = bundleURL.appendingPathComponent("Info.plist")
+        guard let plistDictionary = NSDictionary(contentsOf: plistURL) else {
             return nil
         }
-        let candidates = iconNameCandidates(from: plist)
-        for candidate in candidates {
-            if let icon = loadIcon(named: candidate) {
-                return icon
-            }
-        }
-        return nil
-    }
 
-    private func iconNameCandidates(from plist: [String: Any]) -> [String] {
-        var names: [String] = []
-        if let iconFile = plist["CFBundleIconFile"] as? String, !iconFile.isEmpty {
-            names.append(iconFile)
-        }
-        if let iconFiles = plist["CFBundleIconFiles"] as? [String] {
-            names.append(contentsOf: iconFiles)
-        }
-        if
-            let icons = plist["CFBundleIcons"] as? [String: Any],
-            let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
-            let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String]
-        {
-            names.append(contentsOf: iconFiles)
-        }
-        return Array(NSOrderedSet(array: names)) as? [String] ?? []
-    }
+        let iconURLs = fetchIconNames(plistDictionary: plistDictionary)
+            .sorted(by: >)
+            .compactMap { Bundle(url: bundleURL)?.urlForImageResource($0) }
 
-    private func loadIcon(named name: String) -> NSImage? {
-        let possibleNames: [String]
-        if name.contains(".") {
-            possibleNames = [name]
-        } else {
-            possibleNames = [name, "\(name).png"]
-        }
-        for fileName in possibleNames {
-            let direct = URL(fileURLWithPath: bundlePath).appendingPathComponent(fileName).path
-            if let icon = NSImage(contentsOfFile: direct) {
-                icon.size = NSSize(width: size, height: size)
-                return icon
-            }
-            let resources = URL(fileURLWithPath: bundlePath).appendingPathComponent("Resources").appendingPathComponent(fileName).path
-            if let icon = NSImage(contentsOfFile: resources) {
+        for iconURL in iconURLs {
+            if let icon = NSImage(contentsOf: iconURL) {
                 icon.size = NSSize(width: size, height: size)
                 return icon
             }
         }
+
         return nil
+    }
+
+    private func fetchIconNames(plistDictionary: NSDictionary?) -> [String] {
+        guard let plistDictionary else { return [] }
+
+        var iconFileNames = iconNames(plistDictionary: plistDictionary)
+
+        if iconFileNames.isEmpty {
+            iconFileNames = iconNames(plistDictionary: plistDictionary, platformIdentifier: "~ipad")
+
+            if iconFileNames.isEmpty, let iconFiles = plistDictionary["CFBundleIconFiles"] as? [String] {
+                iconFileNames = iconFiles
+            }
+        }
+
+        if !iconFileNames.isEmpty {
+            for match in ["76", "60"] {
+                let result = iconFileNames.filter { $0.contains(match) }
+                if !result.isEmpty {
+                    return result
+                }
+            }
+
+            return iconFileNames
+        }
+
+        if let iconFileName = plistDictionary["CFBundleIconFile"] as? String {
+            return [iconFileName]
+        }
+
+        return []
+    }
+
+    private func iconNames(plistDictionary: NSDictionary?, platformIdentifier: String = "") -> [String] {
+        let scaleSuffixes = ["@2x", "@3x"]
+
+        guard
+            let plistDictionary,
+            let iconsDictionary = plistDictionary["CFBundleIcons\(platformIdentifier)"] as? NSDictionary,
+            let primaryIconDictionary = iconsDictionary["CFBundlePrimaryIcon"] as? NSDictionary,
+            let iconFilesNames = primaryIconDictionary["CFBundleIconFiles"] as? [String]
+        else {
+            return []
+        }
+
+        var fullIconNames = [String]()
+        for iconFileName in iconFilesNames {
+            for scaleSuffix in scaleSuffixes {
+                fullIconNames.append(iconFileName + scaleSuffix + platformIdentifier)
+            }
+        }
+        return fullIconNames
     }
 }
 

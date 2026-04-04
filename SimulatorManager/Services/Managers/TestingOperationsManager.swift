@@ -31,6 +31,30 @@ actor TestingOperationsManager: TestingOperationsManaging {
         try await simulatorService.setAppearance(simulatorUDID: target.simulatorID, mode: mode)
     }
 
+    func setContentSize(target: SimulatorCommandTarget, size: ContentSizeCategory) async throws {
+        try await simulatorService.setContentSize(simulatorUDID: target.simulatorID, size: size)
+    }
+
+    func setAccessibility(target: SimulatorCommandTarget, key: AccessibilityOverride, enabled: Bool) async throws {
+        try await simulatorService.setAccessibility(simulatorUDID: target.simulatorID, key: key, enabled: enabled)
+    }
+
+    func setLanguageAndLocale(target: SimulatorCommandTarget, languageCode: String, localeIdentifier: String) async throws {
+        try await simulatorService.setLanguageAndLocale(
+            simulatorUDID: target.simulatorID,
+            languageCode: languageCode,
+            localeIdentifier: localeIdentifier
+        )
+    }
+
+    func triggeriCloudSync(target: SimulatorCommandTarget) async throws {
+        try await simulatorService.triggeriCloudSync(simulatorUDID: target.simulatorID)
+    }
+
+    func resetKeychain(target: SimulatorCommandTarget) async throws {
+        try await simulatorService.resetKeychain(simulatorUDID: target.simulatorID)
+    }
+
     func setPrivacy(target: SimulatorCommandTarget, bundleID: String, service: PrivacyService, grant: Bool) async throws {
         try await simulatorService.setPrivacy(simulatorUDID: target.simulatorID, bundleID: bundleID, service: service, grant: grant)
     }

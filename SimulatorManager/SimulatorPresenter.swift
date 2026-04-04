@@ -88,9 +88,18 @@ final class SimulatorPresenter: ObservableObject {
     @Published var clipboardText = ""
     @Published var pastedClipboardText = ""
     @Published var statusBarTime = "9:41"
+    @Published var statusBarOperator = "Carrier"
+    @Published var statusBarDataNetwork: StatusBarDataNetwork = .wifi
+    @Published var statusBarWiFiMode: StatusBarWiFiMode = .active
     @Published var statusBarBattery = "100"
+    @Published var statusBarBatteryState: StatusBarBatteryState = .charged
     @Published var statusBarWiFiBars = "3"
+    @Published var statusBarCellularMode: StatusBarCellularMode = .active
     @Published var statusBarCellularBars = "4"
+    @Published var contentSizeCategory: ContentSizeCategory = .medium
+    @Published var languageCode = Locale.current.language.languageCode?.identifier ?? "en"
+    @Published var localeIdentifier = Locale.current.identifier
+    @Published var accessibilityOverrideStates: [AccessibilityOverride: Bool] = [:]
     @Published private(set) var isRecordingVideo = false
     @Published private(set) var isStreamingLogs = false
     @Published private(set) var logLines: [String] = []
@@ -370,6 +379,18 @@ final class SimulatorPresenter: ObservableObject {
         }
     }
 
+    func triggeriCloudSync() async {
+        await performForSelectedTargets { target in
+            try await self.testingManager.triggeriCloudSync(target: target)
+        }
+    }
+
+    func resetKeychain() async {
+        await performForSelectedTargets { target in
+            try await self.testingManager.resetKeychain(target: target)
+        }
+    }
+
     func launchSelectedApp() async {
         guard let app = selectedApp else {
             return
@@ -576,6 +597,31 @@ final class SimulatorPresenter: ObservableObject {
         }
     }
 
+    func setContentSize(_ size: ContentSizeCategory) async {
+        contentSizeCategory = size
+        await performForSelectedTargets { target in
+            try await self.testingManager.setContentSize(target: target, size: size)
+        }
+    }
+
+    func setAccessibilityOverride(_ key: AccessibilityOverride, enabled: Bool) async {
+        accessibilityOverrideStates[key] = enabled
+        await performForSelectedTargets { target in
+            try await self.testingManager.setAccessibility(target: target, key: key, enabled: enabled)
+        }
+    }
+
+    func applyLanguageLocale() async {
+        await performForSelectedTargets { target in
+            try await self.testingManager.setLanguageAndLocale(
+                target: target,
+                languageCode: self.languageCode,
+                localeIdentifier: self.localeIdentifier
+            )
+        }
+        await refresh(forceRescan: false)
+    }
+
     func setPrivacy(grant: Bool) async {
         guard let app = selectedApp else {
             return
@@ -613,19 +659,45 @@ final class SimulatorPresenter: ObservableObject {
     func applyStatusBarOverride() async {
         let payload = StatusBarOverride(
             time: statusBarTime,
+            dataNetwork: statusBarDataNetwork,
+            wifiMode: statusBarWiFiMode,
             batteryLevel: Int(statusBarBattery),
+            batteryState: statusBarBatteryState,
             wifiBars: Int(statusBarWiFiBars),
-            cellularBars: Int(statusBarCellularBars)
+            cellularMode: statusBarCellularMode,
+            cellularBars: Int(statusBarCellularBars),
+            operatorName: statusBarOperator
         )
         await performForSelectedTargets { target in
             try await self.testingManager.overrideStatusBar(target: target, value: payload)
         }
     }
 
+    func setAppleStatusBarTime() {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 41
+        components.second = 0
+        let appleTime = calendar.date(from: components) ?? Date()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        statusBarTime = formatter.string(from: appleTime)
+    }
+
     func clearStatusBar() async {
         await performForSelectedTargets { target in
             try await self.testingManager.clearStatusBar(target: target)
         }
+        statusBarOperator = "Carrier"
+        statusBarDataNetwork = .wifi
+        statusBarWiFiMode = .active
+        statusBarBattery = "100"
+        statusBarBatteryState = .charged
+        statusBarWiFiBars = "3"
+        statusBarCellularMode = .active
+        statusBarCellularBars = "4"
     }
 
     func copyTextToSimulatorClipboard() async {

@@ -138,9 +138,103 @@ enum PrivacyService: String, CaseIterable, Codable, Sendable {
 
 struct StatusBarOverride: Codable, Hashable, Sendable {
     var time: String?
+    var dataNetwork: StatusBarDataNetwork?
+    var wifiMode: StatusBarWiFiMode?
     var batteryLevel: Int?
+    var batteryState: StatusBarBatteryState?
     var wifiBars: Int?
+    var cellularMode: StatusBarCellularMode?
     var cellularBars: Int?
+    var operatorName: String?
+}
+
+enum StatusBarDataNetwork: String, CaseIterable, Codable, Sendable {
+    case wifi
+    case threeG = "3g"
+    case fourG = "4g"
+    case fiveG = "5g"
+    case fiveGPlus = "5g+"
+    case fiveGUWB = "5g-uwb"
+    case lte
+    case lteA = "lte-a"
+    case ltePlus = "lte+"
+}
+
+enum StatusBarWiFiMode: String, CaseIterable, Codable, Sendable {
+    case searching
+    case failed
+    case active
+}
+
+enum StatusBarCellularMode: String, CaseIterable, Codable, Sendable {
+    case notSupported
+    case searching
+    case failed
+    case active
+}
+
+enum StatusBarBatteryState: String, CaseIterable, Codable, Sendable {
+    case charging
+    case charged
+    case discharging
+}
+
+enum ContentSizeCategory: String, CaseIterable, Codable, Sendable {
+    case extraSmall = "Extra Small"
+    case small = "Small"
+    case medium = "Regular"
+    case large = "Large"
+    case extraLarge = "Extra Large"
+    case extraExtraLarge = "Extra Extra Large"
+    case extraExtraExtraLarge = "Extra Extra Extra Large"
+    case accessibilityMedium = "Accessibility Medium"
+    case accessibilityLarge = "Accessibility Large"
+    case accessibilityExtraLarge = "Accessibility Extra Large"
+    case accessibilityExtraExtraLarge = "Accessibility Extra Extra Large"
+    case accessibilityExtraExtraExtraLarge = "Accessibility Extra Extra Extra Large"
+
+    var simctlValue: String {
+        switch self {
+        case .extraSmall:
+            return "extra-small"
+        case .small:
+            return "small"
+        case .medium:
+            return "medium"
+        case .large:
+            return "large"
+        case .extraLarge:
+            return "extra-large"
+        case .extraExtraLarge:
+            return "extra-extra-large"
+        case .extraExtraExtraLarge:
+            return "extra-extra-extra-large"
+        case .accessibilityMedium:
+            return "accessibility-medium"
+        case .accessibilityLarge:
+            return "accessibility-large"
+        case .accessibilityExtraLarge:
+            return "accessibility-extra-large"
+        case .accessibilityExtraExtraLarge:
+            return "accessibility-extra-extra-large"
+        case .accessibilityExtraExtraExtraLarge:
+            return "accessibility-extra-extra-extra-large"
+        }
+    }
+}
+
+enum AccessibilityOverride: String, CaseIterable, Codable, Sendable, Identifiable {
+    case enhanceTextLegibility = "EnhancedTextLegibilityEnabled"
+    case showButtonShapes = "ButtonShapesEnabled"
+    case showOnOffLabels = "IncreaseButtonLegibilityEnabled"
+    case reduceTransparency = "EnhancedBackgroundContrastEnabled"
+    case increaseContrast = "DarkenSystemColors"
+    case differentiateWithoutColor = "DifferentiateWithoutColor"
+    case smartInvert = "InvertColorsEnabled"
+    case reduceMotion = "ReduceMotionEnabled"
+    case preferCrossFadeTransitions = "ReduceMotionReduceSlideTransitionsPreference"
+
+    var id: String { rawValue }
 }
 
 struct LocationPreset: Identifiable, Hashable, Sendable {
@@ -191,6 +285,11 @@ protocol SimctlServiceing {
     func setLocation(simulatorUDID: String, latitude: String, longitude: String) async throws
     func runLocationGPX(simulatorUDID: String, gpxPath: String) async throws
     func setAppearance(simulatorUDID: String, mode: AppearanceMode) async throws
+    func setContentSize(simulatorUDID: String, size: ContentSizeCategory) async throws
+    func setAccessibility(simulatorUDID: String, key: AccessibilityOverride, enabled: Bool) async throws
+    func setLanguageAndLocale(simulatorUDID: String, languageCode: String, localeIdentifier: String) async throws
+    func triggeriCloudSync(simulatorUDID: String) async throws
+    func resetKeychain(simulatorUDID: String) async throws
     func setPrivacy(simulatorUDID: String, bundleID: String, service: PrivacyService, grant: Bool) async throws
     func sendPush(simulatorUDID: String, bundleID: String, apnsFilePath: String) async throws
     func openURL(simulatorUDID: String, url: String) async throws
@@ -223,6 +322,11 @@ protocol SimulatorServiceing {
     func setLocation(simulatorUDID: String, latitude: String, longitude: String) async throws
     func runLocationGPX(simulatorUDID: String, gpxPath: String) async throws
     func setAppearance(simulatorUDID: String, mode: AppearanceMode) async throws
+    func setContentSize(simulatorUDID: String, size: ContentSizeCategory) async throws
+    func setAccessibility(simulatorUDID: String, key: AccessibilityOverride, enabled: Bool) async throws
+    func setLanguageAndLocale(simulatorUDID: String, languageCode: String, localeIdentifier: String) async throws
+    func triggeriCloudSync(simulatorUDID: String) async throws
+    func resetKeychain(simulatorUDID: String) async throws
     func setPrivacy(simulatorUDID: String, bundleID: String, service: PrivacyService, grant: Bool) async throws
     func sendPush(simulatorUDID: String, bundleID: String, apnsFilePath: String) async throws
     func openURL(simulatorUDID: String, url: String) async throws
@@ -259,6 +363,11 @@ protocol TestingOperationsManaging {
     func setLocation(target: SimulatorCommandTarget, latitude: String, longitude: String) async throws
     func runGPX(target: SimulatorCommandTarget, gpxPath: String) async throws
     func setAppearance(target: SimulatorCommandTarget, mode: AppearanceMode) async throws
+    func setContentSize(target: SimulatorCommandTarget, size: ContentSizeCategory) async throws
+    func setAccessibility(target: SimulatorCommandTarget, key: AccessibilityOverride, enabled: Bool) async throws
+    func setLanguageAndLocale(target: SimulatorCommandTarget, languageCode: String, localeIdentifier: String) async throws
+    func triggeriCloudSync(target: SimulatorCommandTarget) async throws
+    func resetKeychain(target: SimulatorCommandTarget) async throws
     func setPrivacy(target: SimulatorCommandTarget, bundleID: String, service: PrivacyService, grant: Bool) async throws
     func sendPush(target: SimulatorCommandTarget, bundleID: String, apnsPath: String) async throws
     func openDeepLink(target: SimulatorCommandTarget, value: String) async throws

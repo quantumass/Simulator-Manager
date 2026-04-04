@@ -12,7 +12,9 @@ struct TestingAdvancedTabView: View {
                 locationSection
                 appearanceSection
                 deepLinkSection
+                simulatorSystemSection
                 privacySection
+                overridesSection
                 statusBarSection
                 clipboardSection
             }
@@ -24,7 +26,7 @@ struct TestingAdvancedTabView: View {
     // MARK: - Capture & Push
 
     private var capturePushSection: some View {
-        SectionCard(title: "Capture & Push", icon: "camera.fill") {
+        SectionCard(title: "Capture & Push", icon: "camera.fill", iconColor: .blue) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     ActionButton(label: "Screenshot", icon: "camera.fill", style: .secondary) {
@@ -72,7 +74,7 @@ struct TestingAdvancedTabView: View {
     // MARK: - Location
 
     private var locationSection: some View {
-        SectionCard(title: "Location", icon: "location.fill") {
+        SectionCard(title: "Location", icon: "location.fill", iconColor: .green) {
             VStack(spacing: 10) {
                 HStack(spacing: 8) {
                     LabeledField(label: "Latitude", symbol: "mappin", text: $presenter.locationLatitude, placeholder: "48.8566")
@@ -111,7 +113,7 @@ struct TestingAdvancedTabView: View {
     // MARK: - Appearance
 
     private var appearanceSection: some View {
-        SectionCard(title: "Appearance", icon: "circle.lefthalf.filled") {
+        SectionCard(title: "Appearance", icon: "circle.lefthalf.filled", iconColor: .purple) {
             HStack(spacing: 0) {
                 AppearanceChip(label: "☀️  Light", isSelected: presenter.selectedAppearance == .light) {
                     presenter.selectedAppearance = .light
@@ -135,11 +137,8 @@ struct TestingAdvancedTabView: View {
     // MARK: - Deep Link
 
     private var deepLinkSection: some View {
-        SectionCard(title: "Deep Link", icon: "link") {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("URL scheme or universal link")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+        SectionCard(title: "Deep Link", icon: "link", iconColor: .orange) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     IconPrefixedTextField(
                         text: $presenter.deepLink,
@@ -154,10 +153,25 @@ struct TestingAdvancedTabView: View {
         }
     }
 
+    // MARK: - Simulator System
+
+    private var simulatorSystemSection: some View {
+        SectionCard(title: "Simulator System", icon: "gearshape.fill", iconColor: .teal) {
+            HStack(spacing: 8) {
+                ActionButton(label: "Trigger iCloud Sync", icon: "icloud.and.arrow.down.fill", style: .secondary) {
+                    Task { await presenter.triggeriCloudSync() }
+                }
+                ActionButton(label: "Reset Keychain", icon: "key.fill", style: .secondary) {
+                    Task { await presenter.resetKeychain() }
+                }
+            }
+        }
+    }
+
     // MARK: - Privacy
 
     private var privacySection: some View {
-        SectionCard(title: "Privacy Permissions", icon: "hand.raised.fill") {
+        SectionCard(title: "Privacy Permissions", icon: "hand.raised.fill", iconColor: .red) {
             VStack(spacing: 0) {
                 ForEach(Array(privacyPermissions.enumerated()), id: \.element.id) { index, permission in
                     HStack(spacing: 10) {
@@ -197,17 +211,208 @@ struct TestingAdvancedTabView: View {
         }
     }
 
+    // MARK: - Overrides
+
+    private var overridesSection: some View {
+        SectionCard(title: "Overrides", icon: "switch.2", iconColor: .yellow) {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    SubsectionTitle(title: "Display")
+                    HStack(alignment: .bottom, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Content Size")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                            Picker("", selection: $presenter.contentSizeCategory) {
+                                ForEach(ContentSizeCategory.allCases, id: \.self) { size in
+                                    Text(size.rawValue).tag(size)
+                                }
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                        }
+                        .frame(maxWidth: 280, alignment: .leading)
+
+                        ActionButton(label: "Apply", icon: nil, style: .secondary) {
+                            Task { await presenter.setContentSize(presenter.contentSizeCategory) }
+                        }
+                    }
+                }
+
+                Divider()
+                    .overlay(Color(nsColor: .separatorColor).opacity(0.3))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    SubsectionTitle(title: "Localization")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Language")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Picker("", selection: $presenter.languageCode) {
+                            ForEach(languageOptions, id: \.code) { option in
+                                Text(option.name).tag(option.code)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Locale")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Picker("", selection: $presenter.localeIdentifier) {
+                            ForEach(localeOptions, id: \.identifier) { option in
+                                Text(option.name).tag(option.identifier)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    ActionButton(label: "Set Language/Locale", icon: nil, style: .secondary) {
+                        Task { await presenter.applyLanguageLocale() }
+                    }
+                }
+                .onChange(of: presenter.languageCode) { _, newValue in
+                    if !localeOptions.contains(where: { $0.identifier == presenter.localeIdentifier }),
+                       let first = localeEntries(for: newValue).first {
+                        presenter.localeIdentifier = first.identifier
+                    }
+                }
+
+                Divider()
+                    .overlay(Color(nsColor: .separatorColor).opacity(0.3))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    SubsectionTitle(title: "Accessibility")
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
+                        ForEach(accessibilityRows, id: \.key) { row in
+                            Toggle(row.title, isOn: accessibilityBinding(for: row.key))
+                                .toggleStyle(.switch)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Status Bar
 
     private var statusBarSection: some View {
-        SectionCard(title: "Status Bar", icon: "clock.fill") {
-            HStack(alignment: .bottom, spacing: 8) {
-                LabeledField(label: "Time", symbol: "clock", text: $presenter.statusBarTime, placeholder: "9:41")
-                    .frame(maxWidth: 120)
-                LabeledField(label: "Battery %", symbol: "battery.100", text: $presenter.statusBarBattery, placeholder: "100")
-                    .frame(maxWidth: 120)
+        SectionCard(title: "Status Bar", icon: "clock.fill", iconColor: .blue) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 8) {
+                    LabeledField(label: "Time", symbol: "clock", text: $presenter.statusBarTime, placeholder: "9:41")
+                        .frame(maxWidth: 130)
+                    LabeledField(label: "Carrier", symbol: "antenna.radiowaves.left.and.right", text: $presenter.statusBarOperator, placeholder: "Carrier")
+//                    ActionButton(label: "Set 9:41", icon: nil, style: .secondary) {
+//                        presenter.setAppleStatusBarTime()
+//                    }.padding()
+                }
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Network")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("", selection: $presenter.statusBarDataNetwork) {
+                            ForEach(StatusBarDataNetwork.allCases, id: \.self) { network in
+                                Text(dataNetworkDisplayName(network)).tag(network)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+//                        .frame(maxWidth: 180)
+                    }
+
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Wi-Fi Mode")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("", selection: $presenter.statusBarWiFiMode) {
+                            ForEach(StatusBarWiFiMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue.capitalized).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+//                        .frame(maxWidth: 180)
+                    }
+
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Cellular Mode")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("", selection: $presenter.statusBarCellularMode) {
+                            ForEach(StatusBarCellularMode.allCases, id: \.self) { mode in
+                                Text(cellularModeDisplayName(mode)).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+//                        .frame(maxWidth: 180)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Wi-Fi Bars")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("", selection: wifiBarsBinding) {
+                            ForEach(0...3, id: \.self) { value in
+                                Text("\(value)").tag(value)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                    }
+
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Cellular Bars")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("", selection: cellularBarsBinding) {
+                            ForEach(0...4, id: \.self) { value in
+                                Text("\(value)").tag(value)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Battery State")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Picker("", selection: $presenter.statusBarBatteryState) {
+                            ForEach(StatusBarBatteryState.allCases, id: \.self) { state in
+                                Text(state.rawValue.capitalized).tag(state)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                    }
+                    .frame(maxWidth: 180)
+
+                    HStack(alignment: .center, spacing: 4) {
+                        Text("Battery \(batteryLevelBinding.wrappedValue)%")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Slider(value: batterySliderBinding, in: 0...100, step: 1)
+                    }
+                }
 
                 HStack(spacing: 6) {
                     ActionButton(label: "Override", icon: nil, style: .primary) {
@@ -216,8 +421,7 @@ struct TestingAdvancedTabView: View {
                     ActionButton(label: "Clear", icon: nil, style: .secondary) {
                         Task { await presenter.clearStatusBar() }
                     }
-                }
-                .padding(.bottom, 1)
+                }.padding(.vertical)
             }
         }
     }
@@ -225,11 +429,8 @@ struct TestingAdvancedTabView: View {
     // MARK: - Clipboard
 
     private var clipboardSection: some View {
-        SectionCard(title: "Clipboard", icon: "doc.on.clipboard.fill") {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Clipboard content")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+        SectionCard(title: "Clipboard", icon: "doc.on.clipboard.fill", iconColor: .gray) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     IconPrefixedTextField(
                         text: $presenter.clipboardText,
@@ -279,6 +480,97 @@ struct TestingAdvancedTabView: View {
         await presenter.pasteTextFromSimulatorClipboard()
         presenter.clipboardText = presenter.pastedClipboardText
     }
+
+    private var wifiBarsBinding: Binding<Int> {
+        Binding(
+            get: { Int(presenter.statusBarWiFiBars) ?? 3 },
+            set: { presenter.statusBarWiFiBars = "\($0)" }
+        )
+    }
+
+    private var cellularBarsBinding: Binding<Int> {
+        Binding(
+            get: { Int(presenter.statusBarCellularBars) ?? 4 },
+            set: { presenter.statusBarCellularBars = "\($0)" }
+        )
+    }
+
+    private var batterySliderBinding: Binding<Double> {
+        Binding(
+            get: { Double(Int(presenter.statusBarBattery) ?? 100) },
+            set: { presenter.statusBarBattery = "\(Int($0.rounded()))" }
+        )
+    }
+
+    private var batteryLevelBinding: Binding<Int> {
+        Binding(
+            get: { Int(presenter.statusBarBattery) ?? 100 },
+            set: { presenter.statusBarBattery = "\($0)" }
+        )
+    }
+
+    private var languageOptions: [(code: String, name: String)] {
+        NSLocale.isoLanguageCodes
+            .compactMap { code in
+                let name = Locale.current.localizedString(forLanguageCode: code)
+                guard let name else { return nil }
+                return (code: code, name: name)
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private var localeOptions: [(identifier: String, name: String)] {
+        localeEntries(for: presenter.languageCode)
+    }
+
+    private var accessibilityRows: [(key: AccessibilityOverride, title: String)] {
+        [
+            (.enhanceTextLegibility, "Bold Text"),
+            (.showButtonShapes, "Button Shapes"),
+            (.showOnOffLabels, "On/Off Labels"),
+            (.reduceTransparency, "Reduce Transparency"),
+            (.increaseContrast, "Increase Contrast"),
+            (.differentiateWithoutColor, "Differentiate Without Color"),
+            (.smartInvert, "Smart Invert"),
+            (.reduceMotion, "Reduce Motion"),
+            (.preferCrossFadeTransitions, "Prefer Cross-Fade Transitions")
+        ]
+    }
+
+    private func localeEntries(for languageCode: String) -> [(identifier: String, name: String)] {
+        Locale.availableIdentifiers
+            .filter { $0.hasPrefix(languageCode) }
+            .compactMap { identifier in
+                let name = Locale.current.localizedString(forIdentifier: identifier)
+                guard let name else { return nil }
+                return (identifier: identifier, name: name)
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func accessibilityBinding(for key: AccessibilityOverride) -> Binding<Bool> {
+        Binding(
+            get: { presenter.accessibilityOverrideStates[key] ?? false },
+            set: { newValue in
+                presenter.accessibilityOverrideStates[key] = newValue
+                Task { await presenter.setAccessibilityOverride(key, enabled: newValue) }
+            }
+        )
+    }
+
+    private func dataNetworkDisplayName(_ network: StatusBarDataNetwork) -> String {
+        switch network {
+        case .wifi: return "Wi-Fi"
+        default: return network.rawValue.uppercased()
+        }
+    }
+
+    private func cellularModeDisplayName(_ mode: StatusBarCellularMode) -> String {
+        switch mode {
+        case .notSupported: return "Not Supported"
+        default: return mode.rawValue.capitalized
+        }
+    }
 }
 
 // MARK: - SectionCard
@@ -286,6 +578,7 @@ struct TestingAdvancedTabView: View {
 private struct SectionCard<Content: View>: View {
     let title: String
     let icon: String
+    let iconColor: Color
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -335,6 +628,16 @@ private struct LabeledField: View {
     }
 }
 
+private struct SubsectionTitle: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+    }
+}
+
 // MARK: - IconPrefixedTextField
 
 private struct IconPrefixedTextField: View {
@@ -370,7 +673,6 @@ private struct ActionButton: View {
     let icon: String?
     let style: ActionButtonStyle
     let action: () -> Void
-    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
@@ -382,20 +684,10 @@ private struct ActionButton: View {
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
             .frame(minWidth: 60)
         }
-//        .buttonStyle(style == .primary ? AnyButtonStyle(.borderedProminent) : AnyButtonStyle(.bordered))
-    }
-}
-
-// Helper to erase button style type
-private struct AnyButtonStyle: ButtonStyle {
-    private let base: any ButtonStyle
-    init(_ style: some ButtonStyle) { base = style }
-    func makeBody(configuration: Configuration) -> some View {
-        AnyView(base.makeBody(configuration: configuration))
+//        .buttonStyle(style == .primary ? .borderedProminent : .bordered)
+        .controlSize(.small)
     }
 }
 
@@ -423,6 +715,7 @@ private struct AppearanceChip: View {
 }
 
 // MARK: - GrantRevokeToggle
+
 private struct GrantRevokeToggle: View {
     @Binding var isGrant: Bool
 
@@ -434,14 +727,12 @@ private struct GrantRevokeToggle: View {
                 .animation(.easeInOut(duration: 0.15), value: isGrant)
                 .frame(width: 52, alignment: .trailing)
 
-            // Toggle track
             ZStack(alignment: isGrant ? .trailing : .leading) {
                 Capsule()
                     .fill(isGrant ? Color.green : Color(nsColor: .separatorColor).opacity(0.5))
                     .frame(width: 42, height: 24)
                     .animation(.easeInOut(duration: 0.2), value: isGrant)
 
-                // Thumb
                 Circle()
                     .fill(Color.white)
                     .frame(width: 18, height: 18)

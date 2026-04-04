@@ -149,6 +149,48 @@ actor SimctlService: SimctlServiceing {
         _ = try await runSimctl(command: ["ui", simulatorUDID, "appearance", mode.rawValue])
     }
 
+    func setContentSize(simulatorUDID: String, size: ContentSizeCategory) async throws {
+        _ = try await runSimctl(command: ["ui", simulatorUDID, "content_size", size.simctlValue])
+    }
+
+    func setAccessibility(simulatorUDID: String, key: AccessibilityOverride, enabled: Bool) async throws {
+        let value = enabled ? "TRUE" : "FALSE"
+        _ = try await runSimctl(
+            command: [
+                "spawn",
+                simulatorUDID,
+                "defaults",
+                "write",
+                "com.apple.Accessibility",
+                key.rawValue,
+                "-bool",
+                value
+            ]
+        )
+    }
+
+    func setLanguageAndLocale(simulatorUDID: String, languageCode: String, localeIdentifier: String) async throws {
+        let sanitizedLanguage = languageCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sanitizedLocale = localeIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sanitizedLanguage.isEmpty, !sanitizedLocale.isEmpty else {
+            throw SimulatorFeatureError.commandFailed("Language and locale are required.")
+        }
+        _ = try await runSimctl(
+            command: ["spawn", simulatorUDID, "defaults", "write", ".GlobalPreferences", "AppleLanguages", "-array", sanitizedLanguage]
+        )
+        _ = try await runSimctl(
+            command: ["spawn", simulatorUDID, "defaults", "write", ".GlobalPreferences", "AppleLocale", "-string", sanitizedLocale]
+        )
+    }
+
+    func triggeriCloudSync(simulatorUDID: String) async throws {
+        _ = try await runSimctl(command: ["icloud_sync", simulatorUDID])
+    }
+
+    func resetKeychain(simulatorUDID: String) async throws {
+        _ = try await runSimctl(command: ["keychain", simulatorUDID, "reset"])
+    }
+
     func setPrivacy(simulatorUDID: String, bundleID: String, service: PrivacyService, grant: Bool) async throws {
         let command = grant ? "grant" : "revoke"
         _ = try await runSimctl(command: ["privacy", simulatorUDID, command, service.rawValue, bundleID])
@@ -167,14 +209,29 @@ actor SimctlService: SimctlServiceing {
         if let time = value.time, !time.isEmpty {
             args += ["--time", time]
         }
+        if let dataNetwork = value.dataNetwork {
+            args += ["--dataNetwork", dataNetwork.rawValue]
+        }
+        if let wifiMode = value.wifiMode {
+            args += ["--wifiMode", wifiMode.rawValue]
+        }
         if let batteryLevel = value.batteryLevel {
             args += ["--batteryLevel", "\(batteryLevel)"]
+        }
+        if let batteryState = value.batteryState {
+            args += ["--batteryState", batteryState.rawValue]
         }
         if let wifiBars = value.wifiBars {
             args += ["--wifiBars", "\(wifiBars)"]
         }
+        if let cellularMode = value.cellularMode {
+            args += ["--cellularMode", cellularMode.rawValue]
+        }
         if let cellularBars = value.cellularBars {
             args += ["--cellularBars", "\(cellularBars)"]
+        }
+        if let operatorName = value.operatorName?.trimmingCharacters(in: .whitespacesAndNewlines), !operatorName.isEmpty {
+            args += ["--operatorName", operatorName]
         }
         _ = try await runSimctl(command: args)
     }
@@ -458,6 +515,26 @@ actor SimulatorService: SimulatorServiceing {
 
     func setAppearance(simulatorUDID: String, mode: AppearanceMode) async throws {
         try await simctlService.setAppearance(simulatorUDID: simulatorUDID, mode: mode)
+    }
+
+    func setContentSize(simulatorUDID: String, size: ContentSizeCategory) async throws {
+        try await simctlService.setContentSize(simulatorUDID: simulatorUDID, size: size)
+    }
+
+    func setAccessibility(simulatorUDID: String, key: AccessibilityOverride, enabled: Bool) async throws {
+        try await simctlService.setAccessibility(simulatorUDID: simulatorUDID, key: key, enabled: enabled)
+    }
+
+    func setLanguageAndLocale(simulatorUDID: String, languageCode: String, localeIdentifier: String) async throws {
+        try await simctlService.setLanguageAndLocale(simulatorUDID: simulatorUDID, languageCode: languageCode, localeIdentifier: localeIdentifier)
+    }
+
+    func triggeriCloudSync(simulatorUDID: String) async throws {
+        try await simctlService.triggeriCloudSync(simulatorUDID: simulatorUDID)
+    }
+
+    func resetKeychain(simulatorUDID: String) async throws {
+        try await simctlService.resetKeychain(simulatorUDID: simulatorUDID)
     }
 
     func setPrivacy(simulatorUDID: String, bundleID: String, service: PrivacyService, grant: Bool) async throws {
