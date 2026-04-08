@@ -6,6 +6,7 @@ struct ContentView: View {
     @StateObject private var presenter: SimulatorPresenter
     @FocusState private var isSearchFocused: Bool
     @State private var advancedApp: IndexedApp?
+    @State private var showSimulatorOptions = false
 
     init() {
         _presenter = StateObject(wrappedValue: SimulatorModuleBuilder.build())
@@ -72,6 +73,15 @@ struct ContentView: View {
                 app: app,
                 onClose: { advancedApp = nil }
             )
+        }
+        .sheet(isPresented: $showSimulatorOptions) {
+            if let selectedSimulator = presenter.selectedSimulator {
+                SimulatorAdvancedPopup(
+                    presenter: presenter,
+                    simulator: selectedSimulator,
+                    onClose: { showSimulatorOptions = false }
+                )
+            }
         }
     }
 
@@ -273,7 +283,11 @@ struct ContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if let selectedSimulator = presenter.selectedSimulator {
-                        SimulatorQuickActionsBar(presenter: presenter, simulator: selectedSimulator)
+                        SimulatorQuickActionsBar(
+                            presenter: presenter,
+                            simulator: selectedSimulator,
+                            onOpenSimulatorOptions: { showSimulatorOptions = true }
+                        )
                     }
 
                     ContentUnavailableView(
@@ -289,7 +303,11 @@ struct ContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if let selectedSimulator = presenter.selectedSimulator {
-                        SimulatorQuickActionsBar(presenter: presenter, simulator: selectedSimulator)
+                        SimulatorQuickActionsBar(
+                            presenter: presenter,
+                            simulator: selectedSimulator,
+                            onOpenSimulatorOptions: { showSimulatorOptions = true }
+                        )
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(spacing: 6) {
                                 Image(systemName: "arrow.down.app.fill")
@@ -678,6 +696,7 @@ private struct SimulatorSelectionCard: View {
 private struct SimulatorQuickActionsBar: View {
     @ObservedObject var presenter: SimulatorPresenter
     let simulator: SimulatorDevice
+    let onOpenSimulatorOptions: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -721,8 +740,8 @@ private struct SimulatorQuickActionsBar: View {
                 .overlay(Color(nsColor: .separatorColor).opacity(0.3))
             
             HStack(spacing: 8) {
-                QuickActionButton(label: "Erase", icon: "trash") {
-                    Task { await presenter.erase(simulator) }
+                QuickActionButton(label: "Simulator Options", icon: "slider.horizontal.3") {
+                    onOpenSimulatorOptions()
                 }
                 QuickActionButton(label: "Reset Keychain", icon: "key.fill") {
                     Task { await presenter.resetKeychain() }
@@ -732,6 +751,9 @@ private struct SimulatorQuickActionsBar: View {
                 }
                 QuickActionButton(label: "Data Folder", icon: "folder") {
                     Task { await presenter.openSimulatorDataFolder(simulator) }
+                }
+                QuickActionButton(label: "Erase", icon: "trash") {
+                    Task { await presenter.erase(simulator) }
                 }
             }
         }
@@ -868,7 +890,7 @@ private struct AppGridItem: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "slider.horizontal.3")
-                    Text("Advanced Options")
+                    Text("App Options")
                     Spacer()
                     Image(systemName: "chevron.right")
                 }
@@ -963,7 +985,7 @@ private struct AppAdvancedPopup: View {
     let app: IndexedApp
     let onClose: () -> Void
 
-    @State private var localTab: ControlPanelTab = .testing
+    @State private var localTab: ControlPanelTab = .data
     @Namespace private var advancedTabAnimation
 
     private let tabs: [ControlPanelTab] = [.data, .testing, .logs]
@@ -1037,13 +1059,70 @@ private struct AppAdvancedPopup: View {
                 case .data:
                     DataAdvancedTabView(presenter: presenter)
                 case .testing:
-                    TestingAdvancedTabView(presenter: presenter)
+                    TestingAdvancedTabView(
+                        presenter: presenter,
+                        includeAppScopedControls: true,
+                        includeSimulatorScopedControls: false
+                    )
                 case .logs:
                     LogsAdvancedTabView(presenter: presenter)
                 case .app:
                     EmptyView()
                 }
             }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 14)
+        }
+        .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.25), lineWidth: 1)
+        )
+        .frame(minWidth: 720, minHeight: 560)
+    }
+}
+
+private struct SimulatorAdvancedPopup: View {
+    @ObservedObject var presenter: SimulatorPresenter
+    let simulator: SimulatorDevice
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .padding(10)
+                }
+                .buttonStyle(.bordered)
+                .help("Close")
+
+                Image(systemName: simulator.name.lowercased().contains("ipad") ? "ipad" : "iphone")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(simulator.name)
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(simulator.id)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(14)
+
+            Divider()
+                .overlay(Color(nsColor: .separatorColor).opacity(0.3))
+
+            TestingAdvancedTabView(
+                presenter: presenter,
+                includeAppScopedControls: false,
+                includeSimulatorScopedControls: true
+            )
             .padding(.horizontal, 14)
             .padding(.bottom, 14)
         }

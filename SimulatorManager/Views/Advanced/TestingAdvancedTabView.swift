@@ -3,20 +3,28 @@ import SwiftUI
 
 struct TestingAdvancedTabView: View {
     @ObservedObject var presenter: SimulatorPresenter
+    var includeAppScopedControls: Bool = true
+    var includeSimulatorScopedControls: Bool = true
     @State private var privacyGrantState: [PrivacyService: Bool] = [:]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 capturePushSection
-                locationSection
-                appearanceSection
-                deepLinkSection
-                simulatorSystemSection
-                privacySection
-                overridesSection
-                statusBarSection
-                clipboardSection
+                if includeSimulatorScopedControls {
+                    locationSection
+                    appearanceSection
+                    deepLinkSection
+                    simulatorSystemSection
+                }
+                if includeAppScopedControls {
+                    privacySection
+                }
+                if includeSimulatorScopedControls {
+                    overridesSection
+                    statusBarSection
+                    clipboardSection
+                }
             }
             .padding(.vertical, 20)
         }
@@ -26,49 +34,65 @@ struct TestingAdvancedTabView: View {
     // MARK: - Capture & Push
 
     private var capturePushSection: some View {
-        SectionCard(title: "Capture & Push", icon: "camera.fill", iconColor: .blue) {
+        SectionCard(title: captureSectionTitle, icon: "camera.fill", iconColor: .blue) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    ActionButton(label: "Screenshot", icon: "camera.fill", style: .secondary) {
-                        Task { await presenter.takeScreenshot() }
+                    if includeSimulatorScopedControls {
+                        ActionButton(label: "Screenshot", icon: "camera.fill", style: .secondary) {
+                            Task { await presenter.takeScreenshot() }
+                        }
+                        ActionButton(label: "Record Video", icon: "video.fill", style: .secondary) {
+                            Task { await presenter.toggleVideoRecording() }
+                        }
                     }
-                    ActionButton(label: "Record Video", icon: "video.fill", style: .secondary) {
-                        Task { await presenter.toggleVideoRecording() }
-                    }
-                    ActionButton(label: "Send Push", icon: "bell.badge.fill", style: .primary) {
-                        Task { await presenter.sendPushPayload() }
+                    if includeAppScopedControls {
+                        ActionButton(label: "Send Push", icon: "bell.badge.fill", style: .primary) {
+                            Task { await presenter.sendPushPayload() }
+                        }
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Label("Payload JSON", systemImage: "curlybraces")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Button("Format JSON") {
-                            formatPushPayloadJSON()
+                if includeAppScopedControls {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Label("Payload JSON", systemImage: "curlybraces")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Format JSON") {
+                                formatPushPayloadJSON()
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.mini)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.mini)
-                    }
 
-                    TextEditor(text: $presenter.pushPayloadJSON)
-                        .font(.system(size: 11, design: .monospaced))
-                        .frame(minHeight: 90)
-                        .padding(10)
-                        .scrollContentBackground(.hidden)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(nsColor: .textBackgroundColor))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
-                                )
-                        )
+                        TextEditor(text: $presenter.pushPayloadJSON)
+                            .font(.system(size: 11, design: .monospaced))
+                            .frame(minHeight: 90)
+                            .padding(10)
+                            .scrollContentBackground(.hidden)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(nsColor: .textBackgroundColor))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
+                                    )
+                            )
+                    }
                 }
             }
         }
+    }
+
+    private var captureSectionTitle: String {
+        if includeAppScopedControls && includeSimulatorScopedControls {
+            return "Capture & Push"
+        }
+        if includeAppScopedControls {
+            return "Push Notifications"
+        }
+        return "Capture"
     }
 
     // MARK: - Location
