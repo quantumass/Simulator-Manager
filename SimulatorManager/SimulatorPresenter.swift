@@ -47,6 +47,232 @@ enum SimulatorDeviceTypeFilter: String, CaseIterable, Identifiable {
     }
 }
 
+enum NotificationPayloadOptionValueType: Hashable {
+    case string
+    case int
+    case double
+}
+
+struct NotificationPayloadOptionValueChoice: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let rawValue: String
+    let type: NotificationPayloadOptionValueType
+
+    init(title: String, rawValue: String, type: NotificationPayloadOptionValueType) {
+        self.id = "\(type)-\(rawValue)"
+        self.title = title
+        self.rawValue = rawValue
+        self.type = type
+    }
+
+    var payloadValue: Any {
+        switch type {
+        case .string:
+            return rawValue
+        case .int:
+            return Int(rawValue) ?? 0
+        case .double:
+            return Double(rawValue) ?? 0
+        }
+    }
+
+    func matches(_ payloadValue: Any) -> Bool {
+        switch type {
+        case .string:
+            return (payloadValue as? String) == rawValue
+        case .int:
+            return (payloadValue as? Int) == Int(rawValue)
+        case .double:
+            guard let expected = Double(rawValue) else {
+                return false
+            }
+            if let value = payloadValue as? Double {
+                return abs(value - expected) < 0.0001
+            }
+            return false
+        }
+    }
+}
+
+enum NotificationPayloadOption: String, CaseIterable, Identifiable, Hashable {
+    case badge
+    case sound
+    case mutableContent
+    case contentAvailable
+    case threadID
+    case category
+    case interruptionLevel
+    case relevanceScore
+    case targetContentID
+    case summaryArgCount
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .badge:
+            return "Badge"
+        case .sound:
+            return "Sound"
+        case .mutableContent:
+            return "Mutable Content"
+        case .contentAvailable:
+            return "Content Available"
+        case .threadID:
+            return "Thread ID"
+        case .category:
+            return "Category"
+        case .interruptionLevel:
+            return "Interruption Level"
+        case .relevanceScore:
+            return "Relevance Score"
+        case .targetContentID:
+            return "Target Content ID"
+        case .summaryArgCount:
+            return "Summary Count"
+        }
+    }
+
+    var payloadKey: String {
+        switch self {
+        case .badge:
+            return "badge"
+        case .sound:
+            return "sound"
+        case .mutableContent:
+            return "mutable-content"
+        case .contentAvailable:
+            return "content-available"
+        case .threadID:
+            return "thread-id"
+        case .category:
+            return "category"
+        case .interruptionLevel:
+            return "interruption-level"
+        case .relevanceScore:
+            return "relevance-score"
+        case .targetContentID:
+            return "target-content-id"
+        case .summaryArgCount:
+            return "summary-arg-count"
+        }
+    }
+
+    var payloadValue: Any {
+        payloadValue(for: nil)
+    }
+
+    func payloadValue(for selectedRawValue: String?) -> Any {
+        if let selectedRawValue,
+           let selectedChoice = selectableValues.first(where: { $0.rawValue == selectedRawValue }) {
+            return selectedChoice.payloadValue
+        }
+        switch self {
+        case .badge:
+            return 1
+        case .sound:
+            return "default"
+        case .mutableContent:
+            return 1
+        case .contentAvailable:
+            return 1
+        case .threadID:
+            return "general"
+        case .category:
+            return "GENERAL"
+        case .interruptionLevel:
+            return "active"
+        case .relevanceScore:
+            return 0.5
+        case .targetContentID:
+            return "item-1"
+        case .summaryArgCount:
+            return 1
+        }
+    }
+
+    var selectableValues: [NotificationPayloadOptionValueChoice] {
+        switch self {
+        case .badge:
+            return [
+                NotificationPayloadOptionValueChoice(title: "1", rawValue: "1", type: .int),
+                NotificationPayloadOptionValueChoice(title: "5", rawValue: "5", type: .int),
+                NotificationPayloadOptionValueChoice(title: "10", rawValue: "10", type: .int),
+                NotificationPayloadOptionValueChoice(title: "25", rawValue: "25", type: .int)
+            ]
+        case .sound:
+            return [
+                NotificationPayloadOptionValueChoice(title: "Default", rawValue: "default", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Chime", rawValue: "chime.aiff", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Bing Bong", rawValue: "bingbong.aiff", type: .string)
+            ]
+        case .threadID:
+            return [
+                NotificationPayloadOptionValueChoice(title: "General", rawValue: "general", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Updates", rawValue: "updates", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Promotions", rawValue: "promotions", type: .string)
+            ]
+        case .category:
+            return [
+                NotificationPayloadOptionValueChoice(title: "General", rawValue: "GENERAL", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Message", rawValue: "MESSAGE", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Reminder", rawValue: "REMINDER", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Payment", rawValue: "PAYMENT", type: .string)
+            ]
+        case .interruptionLevel:
+            return [
+                NotificationPayloadOptionValueChoice(title: "Active", rawValue: "active", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Passive", rawValue: "passive", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Time Sensitive", rawValue: "time-sensitive", type: .string),
+                NotificationPayloadOptionValueChoice(title: "Critical", rawValue: "critical", type: .string)
+            ]
+        case .relevanceScore:
+            return [
+                NotificationPayloadOptionValueChoice(title: "0.1", rawValue: "0.1", type: .double),
+                NotificationPayloadOptionValueChoice(title: "0.5", rawValue: "0.5", type: .double),
+                NotificationPayloadOptionValueChoice(title: "0.8", rawValue: "0.8", type: .double),
+                NotificationPayloadOptionValueChoice(title: "1.0", rawValue: "1.0", type: .double)
+            ]
+        case .targetContentID:
+            return [
+                NotificationPayloadOptionValueChoice(title: "item-1", rawValue: "item-1", type: .string),
+                NotificationPayloadOptionValueChoice(title: "message-1", rawValue: "message-1", type: .string),
+                NotificationPayloadOptionValueChoice(title: "order-1", rawValue: "order-1", type: .string)
+            ]
+        case .summaryArgCount:
+            return [
+                NotificationPayloadOptionValueChoice(title: "1", rawValue: "1", type: .int),
+                NotificationPayloadOptionValueChoice(title: "2", rawValue: "2", type: .int),
+                NotificationPayloadOptionValueChoice(title: "3", rawValue: "3", type: .int),
+                NotificationPayloadOptionValueChoice(title: "5", rawValue: "5", type: .int)
+            ]
+        case .mutableContent, .contentAvailable:
+            return []
+        }
+    }
+
+    var defaultSelectableRawValue: String? {
+        selectableValues.first?.rawValue
+    }
+
+    func selectedRawValue(from payloadValue: Any) -> String? {
+        selectableValues.first(where: { $0.matches(payloadValue) })?.rawValue
+    }
+}
+
+struct NotificationPayloadPreset: Identifiable, Codable, Hashable {
+    let id: UUID
+    var name: String
+    var payloadJSON: String
+
+    init(id: UUID = UUID(), name: String, payloadJSON: String) {
+        self.id = id
+        self.name = name
+        self.payloadJSON = payloadJSON
+    }
+}
+
 @MainActor
 final class SimulatorPresenter: ObservableObject {
     @Published var searchQuery: String {
@@ -81,6 +307,8 @@ final class SimulatorPresenter: ObservableObject {
     @Published var remotePushPath = "Documents/"
     @Published var deepLink = ""
     @Published var pushPayloadJSON = "{\n  \"aps\": {\n    \"alert\": \"Hello from simctl\"\n  }\n}"
+    @Published var notificationPayloadPresets: [NotificationPayloadPreset] = []
+    @Published var selectedNotificationPayloadPresetID: UUID?
     @Published var locationLatitude = "48.8566"
     @Published var locationLongitude = "2.3522"
     @Published var selectedAppearance: AppearanceMode = .light
@@ -111,6 +339,9 @@ final class SimulatorPresenter: ObservableObject {
     @Published private(set) var simulators: [SimulatorDevice] = []
     @Published private(set) var isLoadingSimulators = false
     @Published private(set) var isScanningApps = false
+    @Published private(set) var hasCompletedInitialLoad = false
+    @Published private(set) var initialLoadProgress: Double = 0
+    @Published private(set) var initialLoadMessage = "Loading simulators…"
     @Published private(set) var favorites: Set<String>
     @Published private(set) var lastScanTime: Date?
     @Published private(set) var errorMessage: String?
@@ -130,6 +361,7 @@ final class SimulatorPresenter: ObservableObject {
 
     private static let lastSearchDefaultsKey = "simulator.search.query"
     private static let favoriteDefaultsKey = "simulator.favorites.ids"
+    private static let notificationPayloadPresetsDefaultsKey = "simulator.push.payload.presets"
 
     init(
         simulatorService: SimulatorServiceing,
@@ -149,6 +381,18 @@ final class SimulatorPresenter: ObservableObject {
         self.logManager = logManager
         self.searchQuery = UserDefaults.standard.string(forKey: Self.lastSearchDefaultsKey) ?? ""
         self.favorites = Set(UserDefaults.standard.stringArray(forKey: Self.favoriteDefaultsKey) ?? [])
+        self.notificationPayloadPresets = Self.loadNotificationPayloadPresets()
+        if self.notificationPayloadPresets.isEmpty {
+            let preset = NotificationPayloadPreset(name: "Default", payloadJSON: self.pushPayloadJSON)
+            self.notificationPayloadPresets = [preset]
+            self.selectedNotificationPayloadPresetID = preset.id
+            persistNotificationPayloadPresets()
+        } else {
+            self.selectedNotificationPayloadPresetID = self.notificationPayloadPresets.first?.id
+            if let selectedPreset = self.notificationPayloadPresets.first {
+                self.pushPayloadJSON = selectedPreset.payloadJSON
+            }
+        }
     }
 
     deinit {
@@ -245,14 +489,20 @@ final class SimulatorPresenter: ObservableObject {
     func refresh(forceRescan: Bool) async {
         isLoadingSimulators = true
         isScanningApps = true
+        initialLoadProgress = 0.1
+        initialLoadMessage = "Loading simulators…"
         errorMessage = nil
         defer {
             isLoadingSimulators = false
             isScanningApps = false
+            initialLoadProgress = 1
+            hasCompletedInitialLoad = true
         }
 
         do {
             let devices = try await self.simulatorService.allSimulators()
+            initialLoadProgress = 0.55
+            initialLoadMessage = "Indexing apps…"
             simulators = devices
             if let selectedSimulatorID, !devices.contains(where: { $0.id == selectedSimulatorID }) {
                 self.selectedSimulatorID = nil
@@ -264,6 +514,7 @@ final class SimulatorPresenter: ObservableObject {
                 let snapshot = try await scannerService.scanApps(simulators: devices, forceRefresh: forceRescan)
                 allApps = snapshot.apps
                 lastScanTime = snapshot.scannedAt
+                initialLoadProgress = 0.95
                 applyFilters()
             } catch {
                 errorMessage = error.localizedDescription
@@ -647,6 +898,77 @@ final class SimulatorPresenter: ObservableObject {
         }
     }
 
+    func selectNotificationPayloadPreset(_ id: UUID?) {
+        selectedNotificationPayloadPresetID = id
+        guard let id, let preset = notificationPayloadPresets.first(where: { $0.id == id }) else {
+            return
+        }
+        pushPayloadJSON = preset.payloadJSON
+    }
+
+    func createNotificationPayloadPreset() {
+        let preset = NotificationPayloadPreset(name: "Payload \(notificationPayloadPresets.count + 1)", payloadJSON: pushPayloadJSON)
+        notificationPayloadPresets.insert(preset, at: 0)
+        selectedNotificationPayloadPresetID = preset.id
+        persistNotificationPayloadPresets()
+    }
+
+    func updateSelectedNotificationPayloadPreset() {
+        guard let selectedID = selectedNotificationPayloadPresetID,
+              let index = notificationPayloadPresets.firstIndex(where: { $0.id == selectedID }) else {
+            return
+        }
+        notificationPayloadPresets[index].payloadJSON = pushPayloadJSON
+        persistNotificationPayloadPresets()
+    }
+
+    func deleteSelectedNotificationPayloadPreset() {
+        guard let selectedID = selectedNotificationPayloadPresetID,
+              let index = notificationPayloadPresets.firstIndex(where: { $0.id == selectedID }) else {
+            return
+        }
+        if notificationPayloadPresets.count == 1 {
+            notificationPayloadPresets = [NotificationPayloadPreset(name: "Default", payloadJSON: pushPayloadJSON)]
+            selectedNotificationPayloadPresetID = notificationPayloadPresets.first?.id
+            persistNotificationPayloadPresets()
+            return
+        }
+        notificationPayloadPresets.remove(at: index)
+        selectedNotificationPayloadPresetID = notificationPayloadPresets.first?.id
+        if let selectedID = selectedNotificationPayloadPresetID,
+           let selectedPreset = notificationPayloadPresets.first(where: { $0.id == selectedID }) {
+            pushPayloadJSON = selectedPreset.payloadJSON
+        }
+        persistNotificationPayloadPresets()
+    }
+
+    func deleteNotificationPayloadPreset(id: UUID) {
+        selectedNotificationPayloadPresetID = id
+        deleteSelectedNotificationPayloadPreset()
+    }
+
+    func applyNotificationPayloadOptions(_ options: Set<NotificationPayloadOption>) {
+        guard !options.isEmpty else {
+            return
+        }
+        guard let data = pushPayloadJSON.data(using: .utf8),
+              var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+            errorMessage = "Invalid payload JSON."
+            return
+        }
+        var aps = object["aps"] as? [String: Any] ?? [:]
+        for option in options {
+            aps[option.payloadKey] = option.payloadValue
+        }
+        object["aps"] = aps
+        guard let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let formattedText = String(data: formattedData, encoding: .utf8) else {
+            errorMessage = "Unable to update payload JSON."
+            return
+        }
+        pushPayloadJSON = formattedText
+    }
+
     func openDeepLink() async {
         guard !deepLink.isEmpty else {
             return
@@ -719,14 +1041,16 @@ final class SimulatorPresenter: ObservableObject {
     }
 
     func startLogs() async {
-        guard let target = selectedTargets.first else {
+        guard let target = logStreamTarget() else {
+            errorMessage = "Boot a simulator to start log streaming."
             return
         }
+        errorMessage = nil
         logsTask?.cancel()
         if let activeLogStreamID {
             await logManager.stop(streamID: activeLogStreamID)
         }
-        let stream = await logManager.start(target: target, bundleID: selectedApp?.bundleID)
+        let stream = await logManager.start(target: target, bundleID: nil)
         activeLogStreamID = stream.id
         isStreamingLogs = true
         logLines.removeAll()
@@ -797,6 +1121,25 @@ final class SimulatorPresenter: ObservableObject {
         return app.installedOn.first
     }
 
+    private func logStreamTarget() -> SimulatorCommandTarget? {
+        if let selectedSimulatorID,
+           let simulator = simulators.first(where: { $0.id == selectedSimulatorID && $0.isBooted }) {
+            return SimulatorCommandTarget(simulatorID: simulator.id, simulatorName: simulator.name, state: simulator.state)
+        }
+
+        if let bootedSelectedTarget = selectedTargets.first(where: { $0.state.caseInsensitiveCompare("Booted") == .orderedSame }) {
+            return bootedSelectedTarget
+        }
+
+        if let bootedSimulator = simulators.first(where: \.isBooted) {
+            selectedSimulatorID = bootedSimulator.id
+            selectedSimulatorIDs = [bootedSimulator.id]
+            return SimulatorCommandTarget(simulatorID: bootedSimulator.id, simulatorName: bootedSimulator.name, state: bootedSimulator.state)
+        }
+
+        return nil
+    }
+
     private func applyFilters() {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
@@ -827,6 +1170,25 @@ final class SimulatorPresenter: ObservableObject {
                     return compareSimulator(lhs.simulator, rhs.simulator)
                 }
                 .map(\.simulator)
+        }
+
+        if query.isEmpty {
+            if let selectedSimulatorID, !filteredSimulators.contains(where: { $0.id == selectedSimulatorID }) {
+                self.selectedSimulatorID = nil
+                selectedSimulatorIDs = []
+            }
+        } else {
+            if let selectedSimulatorID, !filteredSimulators.contains(where: { $0.id == selectedSimulatorID }) {
+                self.selectedSimulatorID = nil
+                selectedSimulatorIDs = []
+            }
+            if self.selectedSimulatorID == nil {
+                let defaultSimulatorID = filteredSimulators.first(where: \.isAvailable)?.id ?? filteredSimulators.first?.id
+                if let defaultSimulatorID {
+                    self.selectedSimulatorID = defaultSimulatorID
+                    selectedSimulatorIDs = [defaultSimulatorID]
+                }
+            }
         }
 
         let appCandidates: [IndexedApp]
@@ -1050,6 +1412,21 @@ final class SimulatorPresenter: ObservableObject {
             return 0
         }
         return (matches * 10) + (bestStreak * 20)
+    }
+
+    private func persistNotificationPayloadPresets() {
+        guard let data = try? JSONEncoder().encode(notificationPayloadPresets) else {
+            return
+        }
+        UserDefaults.standard.set(data, forKey: Self.notificationPayloadPresetsDefaultsKey)
+    }
+
+    private static func loadNotificationPayloadPresets() -> [NotificationPayloadPreset] {
+        guard let data = UserDefaults.standard.data(forKey: notificationPayloadPresetsDefaultsKey),
+              let presets = try? JSONDecoder().decode([NotificationPayloadPreset].self, from: data) else {
+            return []
+        }
+        return presets
     }
 }
 

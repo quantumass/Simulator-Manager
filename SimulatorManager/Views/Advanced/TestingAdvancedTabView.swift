@@ -6,6 +6,12 @@ struct TestingAdvancedTabView: View {
     var includeAppScopedControls: Bool = true
     var includeSimulatorScopedControls: Bool = true
     @State private var privacyGrantState: [PrivacyService: Bool] = [:]
+    @State private var isNotificationComposerPresented = false
+    @State private var composerPayloadJSON = ""
+    @State private var composerSelectedPresetID: UUID?
+    @State private var composerSelectedOptions: Set<NotificationPayloadOption> = []
+    @State private var composerOptionSelectedValues: [NotificationPayloadOption: String] = [:]
+    @State private var composerErrorMessage: String?
 
     var body: some View {
         ScrollView {
@@ -45,44 +51,209 @@ struct TestingAdvancedTabView: View {
                             Task { await presenter.toggleVideoRecording() }
                         }
                     }
-                    if includeAppScopedControls {
-                        ActionButton(label: "Send Push", icon: "bell.badge.fill", style: .primary) {
-                            Task { await presenter.sendPushPayload() }
-                        }
-                    }
                 }
 
                 if includeAppScopedControls {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Label("Payload JSON", systemImage: "curlybraces")
+                            Label("Notification Presets", systemImage: "bell.badge")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Button("Format JSON") {
-                                formatPushPayloadJSON()
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
                         }
 
-                        TextEditor(text: $presenter.pushPayloadJSON)
-                            .font(.system(size: 11, design: .monospaced))
-                            .frame(minHeight: 90)
-                            .padding(10)
-                            .scrollContentBackground(.hidden)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(nsColor: .textBackgroundColor))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 10)], alignment: .leading, spacing: 10) {
+                            ForEach(presenter.notificationPayloadPresets) { preset in
+                                Button {
+                                    openNotificationComposer(with: preset)
+                                } label: {
+                                    NotificationPresetTileView(
+                                        title: preset.name,
+                                        subtitle: notificationPresetSubtitle(from: preset.payloadJSON),
+                                        symbol: "bell.fill"
                                     )
-                            )
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button("Delete") {
+                                        presenter.deleteNotificationPayloadPreset(id: preset.id)
+                                    }
+                                }
+                            }
+
+                            Button {
+                                openNotificationComposer(with: nil)
+                            } label: {
+                                NotificationPresetTileView(
+                                    title: "New Notification",
+                                    subtitle: "Create custom payload",
+                                    symbol: "plus"
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }
         }
+        .sheet(isPresented: $isNotificationComposerPresented) {
+            notificationComposerSheet
+        }
+    }
+
+    private var notificationComposerSheet: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Notification Payload")
+                        .font(.system(size: 14, weight: .semibold))
+                    Spacer()
+                    if let selectedID = composerSelectedPresetID,
+                       let preset = presenter.notificationPayloadPresets.first(where: { $0.id == selectedID }) {
+                        Text(preset.name)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(nsColor: .windowBackgroundColor), in: Capsule())
+                    } else {
+                        Text("New")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(nsColor: .windowBackgroundColor), in: Capsule())
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Options")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8)], alignment: .leading, spacing: 8) {
+                        ForEach(NotificationPayloadOption.allCases) { option in
+                            Button {
+                                setComposerPayloadOption(option, enabled: !composerSelectedOptions.contains(option))
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: composerSelectedOptions.contains(option) ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 12))
+                                    Text(option.title)
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(composerSelectedOptions.contains(option) ? Color(nsColor: .controlAccentColor).opacity(0.14) : Color(nsColor: .windowBackgroundColor))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(
+                                            composerSelectedOptions.contains(option)
+                                            ? Color(nsColor: .controlAccentColor).opacity(0.5)
+                                            : Color(nsColor: .separatorColor).opacity(0.35),
+                                            lineWidth: 1
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    if !selectedConfigurableComposerOptions.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Option Values")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(selectedConfigurableComposerOptions, id: \.self) { option in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(option.title)
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(.secondary)
+                                        Picker(option.title, selection: composerOptionValueBinding(for: option)) {
+                                            ForEach(option.selectableValues) { choice in
+                                                Text(choice.title).tag(choice.rawValue)
+                                            }
+                                        }
+                                        .labelsHidden()
+                                        .pickerStyle(.menu)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HStack {
+                    Spacer()
+                    Button("Format JSON") {
+                        formatComposerPayloadJSON()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+                }
+
+                TextEditor(text: $composerPayloadJSON)
+                    .font(.system(size: 11, design: .monospaced))
+                    .frame(minHeight: 220)
+                    .padding(10)
+                    .scrollContentBackground(.hidden)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(nsColor: .textBackgroundColor))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
+                            )
+                    )
+
+                if let composerErrorMessage {
+                    Text(composerErrorMessage)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red)
+                }
+
+                HStack(spacing: 8) {
+                    Button("Cancel") {
+                        isNotificationComposerPresented = false
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Save") {
+                        saveComposerPreset()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Spacer()
+
+                    Button("Send") {
+                        Task {
+                            composerErrorMessage = nil
+                            presenter.pushPayloadJSON = composerPayloadJSON
+                            await presenter.sendPushPayload()
+                            if presenter.errorMessage == nil {
+                                isNotificationComposerPresented = false
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .padding(14)
+        .frame(minWidth: 620, minHeight: 420)
     }
 
     private var captureSectionTitle: String {
@@ -491,13 +662,160 @@ struct TestingAdvancedTabView: View {
         await presenter.setPrivacy(grant: grant)
     }
 
-    private func formatPushPayloadJSON() {
-        guard let data = presenter.pushPayloadJSON.data(using: .utf8),
+    private func openNotificationComposer(with preset: NotificationPayloadPreset?) {
+        composerErrorMessage = nil
+        if let preset {
+            composerSelectedPresetID = preset.id
+            composerPayloadJSON = preset.payloadJSON
+        } else {
+            composerSelectedPresetID = nil
+            composerPayloadJSON = presenter.pushPayloadJSON
+        }
+        composerSelectedOptions = currentPayloadOptions(from: composerPayloadJSON)
+        composerOptionSelectedValues = currentPayloadOptionSelectedValues(from: composerPayloadJSON)
+        isNotificationComposerPresented = true
+    }
+
+    private func saveComposerPreset() {
+        presenter.pushPayloadJSON = composerPayloadJSON
+        if let selectedID = composerSelectedPresetID {
+            presenter.selectNotificationPayloadPreset(selectedID)
+            presenter.pushPayloadJSON = composerPayloadJSON
+            presenter.updateSelectedNotificationPayloadPreset()
+        } else {
+            presenter.createNotificationPayloadPreset()
+            composerSelectedPresetID = presenter.selectedNotificationPayloadPresetID
+        }
+    }
+
+    private func setComposerPayloadOption(_ option: NotificationPayloadOption, enabled: Bool) {
+        guard let data = composerPayloadJSON.data(using: .utf8),
+              var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+            composerErrorMessage = "Invalid payload JSON."
+            return
+        }
+        var aps = object["aps"] as? [String: Any] ?? [:]
+        if enabled {
+            let selectedRawValue = composerOptionSelectedValues[option] ?? option.defaultSelectableRawValue
+            aps[option.payloadKey] = option.payloadValue(for: selectedRawValue)
+            composerSelectedOptions.insert(option)
+            if let selectedRawValue {
+                composerOptionSelectedValues[option] = selectedRawValue
+            }
+        } else {
+            aps.removeValue(forKey: option.payloadKey)
+            composerSelectedOptions.remove(option)
+            composerOptionSelectedValues.removeValue(forKey: option)
+        }
+        object["aps"] = aps
+        guard let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let formattedText = String(data: formattedData, encoding: .utf8) else {
+            composerErrorMessage = "Unable to update payload options."
+            return
+        }
+        composerPayloadJSON = formattedText
+        composerErrorMessage = nil
+    }
+
+    private func setComposerPayloadOptionSelectedValue(_ option: NotificationPayloadOption, rawValue: String) {
+        composerOptionSelectedValues[option] = rawValue
+        guard composerSelectedOptions.contains(option) else {
+            return
+        }
+        guard let data = composerPayloadJSON.data(using: .utf8),
+              var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+            composerErrorMessage = "Invalid payload JSON."
+            return
+        }
+        var aps = object["aps"] as? [String: Any] ?? [:]
+        aps[option.payloadKey] = option.payloadValue(for: rawValue)
+        object["aps"] = aps
+        guard let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let formattedText = String(data: formattedData, encoding: .utf8) else {
+            composerErrorMessage = "Unable to update option value."
+            return
+        }
+        composerPayloadJSON = formattedText
+        composerErrorMessage = nil
+    }
+
+    private func formatComposerPayloadJSON() {
+        guard let data = composerPayloadJSON.data(using: .utf8),
               let object = try? JSONSerialization.jsonObject(with: data),
-              let formatted = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted]),
-              let text = String(data: formatted, encoding: .utf8)
-        else { return }
-        presenter.pushPayloadJSON = text
+              let formatted = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let text = String(data: formatted, encoding: .utf8) else {
+            composerErrorMessage = "Invalid payload JSON."
+            return
+        }
+        composerPayloadJSON = text
+        composerSelectedOptions = currentPayloadOptions(from: text)
+        composerOptionSelectedValues = currentPayloadOptionSelectedValues(from: text)
+        composerErrorMessage = nil
+    }
+
+    private func currentPayloadOptions(from payloadJSON: String) -> Set<NotificationPayloadOption> {
+        guard let data = payloadJSON.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let aps = object["aps"] as? [String: Any] else {
+            return []
+        }
+        var options: Set<NotificationPayloadOption> = []
+        for option in NotificationPayloadOption.allCases {
+            if aps[option.payloadKey] != nil {
+                options.insert(option)
+            }
+        }
+        return options
+    }
+
+    private func currentPayloadOptionSelectedValues(from payloadJSON: String) -> [NotificationPayloadOption: String] {
+        guard let data = payloadJSON.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let aps = object["aps"] as? [String: Any] else {
+            return [:]
+        }
+        var selectedValues: [NotificationPayloadOption: String] = [:]
+        for option in NotificationPayloadOption.allCases where !option.selectableValues.isEmpty {
+            guard let payloadValue = aps[option.payloadKey] else {
+                continue
+            }
+            if let matchedValue = option.selectedRawValue(from: payloadValue) {
+                selectedValues[option] = matchedValue
+            } else if let defaultValue = option.defaultSelectableRawValue {
+                selectedValues[option] = defaultValue
+            }
+        }
+        return selectedValues
+    }
+
+    private var selectedConfigurableComposerOptions: [NotificationPayloadOption] {
+        composerSelectedOptions
+            .filter { !$0.selectableValues.isEmpty }
+            .sorted { $0.title < $1.title }
+    }
+
+    private func composerOptionValueBinding(for option: NotificationPayloadOption) -> Binding<String> {
+        Binding(
+            get: { composerOptionSelectedValues[option] ?? option.defaultSelectableRawValue ?? "" },
+            set: { newValue in
+                setComposerPayloadOptionSelectedValue(option, rawValue: newValue)
+            }
+        )
+    }
+
+    private func notificationPresetSubtitle(from payloadJSON: String) -> String {
+        guard let data = payloadJSON.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let aps = object["aps"] as? [String: Any] else {
+            return "Custom payload"
+        }
+        if let alert = aps["alert"] as? String, !alert.isEmpty {
+            return alert
+        }
+        if let alertObject = aps["alert"] as? [String: Any], let body = alertObject["body"] as? String, !body.isEmpty {
+            return body
+        }
+        return "Ready to send"
     }
 
     private func pasteFromClipboard() async {
@@ -629,6 +947,37 @@ private struct SectionCard<Content: View>: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+private struct NotificationPresetTileView: View {
+    let title: String
+    let subtitle: String
+    let symbol: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(nsColor: .controlAccentColor))
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(subtitle)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
         )
     }
 }

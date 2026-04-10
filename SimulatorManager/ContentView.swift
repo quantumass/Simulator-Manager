@@ -20,7 +20,11 @@ struct ContentView: View {
         VStack(spacing: 0) {
             topSearchBar
 
-            if presenter.isSimulatorSelected {
+            if !presenter.hasCompletedInitialLoad {
+                initialLoadingArea
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(nsColor: .underPageBackgroundColor))
+            } else if presenter.isSimulatorSelected {
                 HStack(spacing: 0) {
                     sidebar
                         .frame(width: 272)
@@ -179,6 +183,20 @@ struct ContentView: View {
     }
 
     // MARK: - Sidebar
+
+    private var initialLoadingArea: some View {
+        VStack(spacing: 14) {
+            Text(presenter.initialLoadMessage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            ProgressView(value: presenter.initialLoadProgress)
+                .progressViewStyle(.linear)
+                .frame(width: 260)
+                .animation(.easeInOut(duration: 0.25), value: presenter.initialLoadProgress)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
     private var sidebar: some View {
         ScrollView {
