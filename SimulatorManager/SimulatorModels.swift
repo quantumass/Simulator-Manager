@@ -10,6 +10,7 @@ struct SimulatorDevice: Identifiable, Hashable, Sendable {
     let deviceTypeIdentifier: String?
     let createdAt: Date?
     let lastUsedAt: Date?
+    let sizeInBytes: Int64?
 
     var runtimeName: String {
         let rawValue = runtimeIdentifier.split(separator: ".").last.map(String.init) ?? runtimeIdentifier
@@ -269,6 +270,7 @@ protocol SimctlServiceing {
     func boot(udid: String) async throws
     func shutdown(udid: String) async throws
     func erase(udid: String) async throws
+    func delete(udid: String) async throws
     func openSimulator(udid: String) async throws
     func installApp(path: String, simulatorUDID: String) async throws
     func uninstallApp(bundleID: String, simulatorUDID: String) async throws
@@ -306,6 +308,7 @@ protocol SimulatorServiceing {
     func boot(udid: String) async throws
     func shutdown(udid: String) async throws
     func erase(udid: String) async throws
+    func delete(udid: String) async throws
     func openInSimulator(udid: String) async throws
     func installApp(path: String, simulatorUDID: String) async throws
     func uninstallApp(bundleID: String, simulatorUDID: String) async throws
@@ -386,6 +389,7 @@ protocol SimulatorRouting {
     func openFolder(path: String) throws
     func copyToClipboard(_ value: String)
     func pickFile(allowedFileTypes: [String]) async -> String?
+    func pickFiles(allowedFileTypes: [String]) async -> [String]
     func pickFolder() async -> String?
     func savePanel(defaultName: String, allowedFileTypes: [String]) async -> String?
 }

@@ -29,6 +29,7 @@ actor SimctlService: SimctlServiceing {
             .flatMap { runtimeIdentifier, devices in
                 devices.map { device in
                     let dates = simulatorDates(for: device.udid)
+                    let sizeInBytes = simulatorSizeInBytes(for: device.udid)
                     return SimulatorDevice(
                         id: device.udid,
                         name: device.name,
@@ -38,7 +39,8 @@ actor SimctlService: SimctlServiceing {
                         availabilityError: device.availabilityError,
                         deviceTypeIdentifier: device.deviceTypeIdentifier,
                         createdAt: dates.createdAt,
-                        lastUsedAt: dates.lastUsedAt
+                        lastUsedAt: dates.lastUsedAt,
+                        sizeInBytes: sizeInBytes
                     )
                 }
             }
@@ -57,6 +59,12 @@ actor SimctlService: SimctlServiceing {
 
     func erase(udid: String) async throws {
         _ = try await runSimctl(command: ["erase", udid])
+        simulatorCache = nil
+    }
+
+    func delete(udid: String) async throws {
+        _ = try await runSimctl(command: ["delete", udid])
+        simulatorCache = nil
     }
 
     func openSimulator(udid: String) async throws {
@@ -353,6 +361,37 @@ actor SimctlService: SimctlServiceing {
         )
     }
 
+    private func simulatorSizeInBytes(for udid: String) -> Int64? {
+        let deviceFolderURL = URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Developer/CoreSimulator/Devices")
+            .appendingPathComponent(udid)
+        return directorySizeInBytes(at: deviceFolderURL)
+    }
+
+    private func directorySizeInBytes(at url: URL) -> Int64? {
+        let fileManager = FileManager.default
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        var total: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            guard
+                let values = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .fileSizeKey]),
+                values.isRegularFile == true
+            else {
+                continue
+            }
+            let fileSize = values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? values.fileSize ?? 0
+            total += Int64(fileSize)
+        }
+        return total
+    }
+
     private func runSimctl(command: [String], allowKnownFailure: Bool = false) async throws -> String {
         let result = try await execute(executablePath: "/usr/bin/xcrun", arguments: ["simctl"] + command)
         if allowKnownFailure && result.terminationStatus != 0 {
@@ -451,6 +490,10 @@ actor SimulatorService: SimulatorServiceing {
 
     func erase(udid: String) async throws {
         try await simctlService.erase(udid: udid)
+    }
+
+    func delete(udid: String) async throws {
+        try await simctlService.delete(udid: udid)
     }
 
     func openInSimulator(udid: String) async throws {

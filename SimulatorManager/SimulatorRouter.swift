@@ -25,6 +25,20 @@ actor SimulatorRouter: SimulatorRouting {
     }
 
     @MainActor
+    func pickFiles(allowedFileTypes: [String]) async -> [String] {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = allowedFileTypes.compactMap { UTType(filenameExtension: $0) }
+        let response = panel.runModal()
+        guard response == .OK else {
+            return []
+        }
+        return panel.urls.map(\.path)
+    }
+
+    @MainActor
     func pickFolder() async -> String? {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false

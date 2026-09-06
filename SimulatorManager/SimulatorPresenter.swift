@@ -302,6 +302,7 @@ final class SimulatorPresenter: ObservableObject {
     @Published var selectedTab: ControlPanelTab = .app
     @Published var installFilePath = ""
     @Published private(set) var isInstallingAppFile = false
+    @Published private(set) var isAddingMedia = false
     @Published var bundleIDInput = ""
     @Published var containerKind: AppContainerKind = .data
     @Published var remotePushPath = "Documents/"
@@ -339,6 +340,7 @@ final class SimulatorPresenter: ObservableObject {
     @Published private(set) var simulators: [SimulatorDevice] = []
     @Published private(set) var isLoadingSimulators = false
     @Published private(set) var isScanningApps = false
+    @Published private(set) var isCleaningStaleSimulators = false
     @Published private(set) var hasCompletedInitialLoad = false
     @Published private(set) var initialLoadProgress: Double = 0
     @Published private(set) var initialLoadMessage = "Loading simulators…"
@@ -411,6 +413,10 @@ final class SimulatorPresenter: ObservableObject {
 
     var indexedAppCount: Int {
         allApps.count
+    }
+
+    var staleSimulatorCount: Int {
+        staleSimulators().count
     }
 
     var selectedSimulator: SimulatorDevice? {
@@ -620,6 +626,46 @@ final class SimulatorPresenter: ObservableObject {
         }
     }
 
+    func delete(_ simulator: SimulatorDevice) async {
+        errorMessage = nil
+        actionMessage = "Deleting \(simulator.name)…"
+        do {
+            try await self.simulatorService.delete(udid: simulator.id)
+            removeSimulatorFromLocalState(simulatorID: simulator.id)
+            await refresh(forceRescan: true)
+            actionMessage = "Deleted \(simulator.name)."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteStaleSimulators() async {
+        let staleDevices = staleSimulators()
+        guard !staleDevices.isEmpty else {
+            actionMessage = "No simulators older than one month to clean."
+            return
+        }
+
+        errorMessage = nil
+        isCleaningStaleSimulators = true
+        actionMessage = "Deleting \(staleDevices.count) stale simulator(s)…"
+        defer {
+            isCleaningStaleSimulators = false
+        }
+
+        do {
+            for simulator in staleDevices {
+                try await self.simulatorService.delete(udid: simulator.id)
+                removeSimulatorFromLocalState(simulatorID: simulator.id)
+            }
+            await refresh(forceRescan: true)
+            actionMessage = "Deleted \(staleDevices.count) stale simulator(s)."
+        } catch {
+            errorMessage = error.localizedDescription
+            await refresh(forceRescan: true)
+        }
+    }
+
     func openSimulator(_ simulator: SimulatorDevice) async {
         errorMessage = nil
         do {
@@ -784,11 +830,38 @@ final class SimulatorPresenter: ObservableObject {
     }
 
     func addMediaToSelectedSimulators() async {
-        guard let mediaPath = await router.pickFile(allowedFileTypes: ["png", "jpg", "jpeg", "mov", "mp4"]) else {
+        let mediaPaths = await router.pickFiles(allowedFileTypes: ["png", "jpg", "jpeg", "heic", "heif", "mov", "mp4", "m4v"])
+        guard !mediaPaths.isEmpty else {
             return
         }
-        await performForSelectedTargets { target in
-            try await self.dataManager.addMedia(target: target, filePath: mediaPath)
+        await addMediaToSelectedSimulators(filePaths: mediaPaths)
+    }
+
+    func addMediaToSelectedSimulators(filePaths: [String]) async {
+        let sanitizedPaths = Array(
+            Set(
+                filePaths
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+            )
+        )
+        guard !sanitizedPaths.isEmpty else {
+            return
+        }
+        let targets = selectedTargets
+        guard !targets.isEmpty else {
+            errorMessage = "Select at least one simulator before adding media."
+            return
+        }
+        isAddingMedia = true
+        actionMessage = sanitizedPaths.count == 1 ? "Adding media…" : "Adding \(sanitizedPaths.count) media files…"
+        defer {
+            isAddingMedia = false
+        }
+        await perform(targets: targets) { target in
+            for path in sanitizedPaths {
+                try await self.dataManager.addMedia(target: target, filePath: path)
+            }
         }
     }
 
@@ -1283,6 +1356,44 @@ final class SimulatorPresenter: ObservableObject {
             )
         }
         applyFilters()
+    }
+
+    private func removeSimulatorFromLocalState(simulatorID: String) {
+        simulators.removeAll { $0.id == simulatorID }
+        favorites.remove(simulatorID)
+        selectedSimulatorIDs.remove(simulatorID)
+        if selectedSimulatorID == simulatorID {
+            selectedSimulatorID = nil
+        }
+        UserDefaults.standard.set(Array(favorites), forKey: Self.favoriteDefaultsKey)
+        allApps = allApps.compactMap { app in
+            let remainingInstalls = app.installedOn.filter { $0.simulatorID != simulatorID }
+            guard !remainingInstalls.isEmpty else { return nil }
+            return IndexedApp(
+                name: app.name,
+                bundleID: app.bundleID,
+                version: app.version,
+                build: app.build,
+                bundlePath: app.bundlePath,
+                installDate: app.installDate,
+                sizeInBytes: app.sizeInBytes,
+                installedOn: remainingInstalls
+            )
+        }
+        applyFilters()
+    }
+
+    private func staleSimulators(now: Date = Date()) -> [SimulatorDevice] {
+        let oneMonthAgo = Calendar.current.date(byAdding: .month, value: -1, to: now) ?? now.addingTimeInterval(-30 * 24 * 60 * 60)
+        return simulators.filter { simulator in
+            guard simulator.isAvailable, !simulator.isBooted else {
+                return false
+            }
+            guard let lastUsedAt = simulator.lastUsedAt else {
+                return false
+            }
+            return lastUsedAt < oneMonthAgo
+        }
     }
 
     private func performForSelectedTargets(operation: @escaping (SimulatorCommandTarget) async throws -> Void) async {

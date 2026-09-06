@@ -6,7 +6,8 @@ struct DataAdvancedTabView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             containerSection
-            fileMediaSection
+            fileSection
+            mediaInfoSection
         }
         .padding(.vertical, 20)
     }
@@ -53,10 +54,10 @@ struct DataAdvancedTabView: View {
         }
     }
 
-    // MARK: - File & Media
+    // MARK: - File Access
 
-    private var fileMediaSection: some View {
-        SectionCard(title: "File & Media", icon: "doc.fill") {
+    private var fileSection: some View {
+        SectionCard(title: "App File Access", icon: "doc.fill") {
             VStack(alignment: .leading, spacing: 14) {
                 // Push File
                 VStack(alignment: .leading, spacing: 6) {
@@ -93,47 +94,25 @@ struct DataAdvancedTabView: View {
                         .buttonStyle(.bordered)
                     }
                 }
+            }
+        }
+    }
 
-                Divider()
-                    .overlay(Color(nsColor: .separatorColor).opacity(0.3))
+    private var mediaInfoSection: some View {
+        SectionCard(title: "Media Library", icon: "photo.on.rectangle.angled") {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 1)
 
-                // Add Media
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Add Media")
-                        .font(.system(size: 11, weight: .medium))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Media import is simulator-level.")
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
-
-                    HStack(spacing: 10) {
-                        // Drop zone
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(
-                                    Color(nsColor: .separatorColor).opacity(0.5),
-                                    style: StrokeStyle(lineWidth: 1.5, dash: [5, 3])
-                                )
-                            VStack(spacing: 6) {
-                                Image(systemName: "photo.on.rectangle.angled")
-                                    .font(.system(size: 22))
-                                    .foregroundStyle(.tertiary)
-                                Text("Drop photos or videos here")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 72)
-
-                        Button(action: { Task { await presenter.addMediaToSelectedSimulators() } }) {
-                            HStack(spacing: 5) {
-                                Image(systemName: "plus.rectangle.on.folder")
-                                    .font(.system(size: 11))
-                                Text("Browse")
-                                    .font(.system(size: 12, weight: .medium))
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                        }
-                        .buttonStyle(.bordered)
-                    }
+                    Text("Use \"Add To Photos\" in the simulator quick actions (next to \"Data Folder\") to add photos and videos.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
                 }
             }
         }

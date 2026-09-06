@@ -7,6 +7,8 @@ struct ContentView: View {
     @FocusState private var isSearchFocused: Bool
     @State private var advancedApp: IndexedApp?
     @State private var showSimulatorOptions = false
+    @State private var simulatorPendingDeletion: SimulatorDevice?
+    @State private var showStaleSimulatorCleanupConfirmation = false
 
     init() {
         _presenter = StateObject(wrappedValue: SimulatorModuleBuilder.build())
@@ -71,6 +73,26 @@ struct ContentView: View {
             actions: { Button("OK") { presenter.clearError() } },
             message: { Text(presenter.errorMessage ?? "") }
         )
+        .alert("Delete Simulator?", isPresented: deleteSimulatorConfirmationBinding) {
+            Button("Cancel", role: .cancel) {
+                simulatorPendingDeletion = nil
+            }
+            Button("Delete", role: .destructive) {
+                guard let simulator = simulatorPendingDeletion else { return }
+                simulatorPendingDeletion = nil
+                Task { await presenter.delete(simulator) }
+            }
+        } message: {
+            Text("This permanently deletes \(simulatorPendingDeletion?.name ?? "this simulator") and its data.")
+        }
+        .alert("Clean Stale Simulators?", isPresented: $showStaleSimulatorCleanupConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Clean", role: .destructive) {
+                Task { await presenter.deleteStaleSimulators() }
+            }
+        } message: {
+            Text("This permanently deletes \(presenter.staleSimulatorCount) available simulator(s) that have not been used for more than one month. Booted simulators are skipped.")
+        }
         .sheet(item: $advancedApp) { app in
             AppAdvancedPopup(
                 presenter: presenter,
@@ -164,6 +186,27 @@ struct ContentView: View {
 
                 Spacer()
 
+                Button {
+                    showStaleSimulatorCleanupConfirmation = true
+                } label: {
+                    HStack(spacing: 5) {
+                        if presenter.isCleaningStaleSimulators {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: "trash.slash")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        Text(presenter.isCleaningStaleSimulators ? "Cleaning…" : "Clean Stale")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.bordered)
+                .disabled(presenter.isCleaningStaleSimulators || presenter.staleSimulatorCount == 0)
+                .help("Delete simulators not used for more than one month")
+
                 if presenter.isScanningApps {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
@@ -246,6 +289,7 @@ struct ContentView: View {
                         }
                         Button("Open in Simulator") { Task { await presenter.openSimulator(simulator) } }
                         Button("Erase") { Task { await presenter.erase(simulator) } }
+                        Button("Delete", role: .destructive) { simulatorPendingDeletion = simulator }
                         Divider()
                         Button(presenter.favorites.contains(simulator.id) ? "Remove Favorite" : "Add Favorite") {
                             presenter.toggleFavorite(simulatorID: simulator.id)
@@ -279,6 +323,17 @@ struct ContentView: View {
                             SimulatorSelectionCard(simulator: simulator)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(simulator.isBooted ? "Shutdown" : "Boot") {
+                                Task {
+                                    if simulator.isBooted { await presenter.shutdown(simulator) }
+                                    else { await presenter.boot(simulator) }
+                                }
+                            }
+                            Button("Open in Simulator") { Task { await presenter.openSimulator(simulator) } }
+                            Button("Erase") { Task { await presenter.erase(simulator) } }
+                            Button("Delete", role: .destructive) { simulatorPendingDeletion = simulator }
+                        }
                     }
                 }
                 .padding(16)
@@ -304,6 +359,7 @@ struct ContentView: View {
                         SimulatorQuickActionsBar(
                             presenter: presenter,
                             simulator: selectedSimulator,
+                            onDeleteSimulator: { simulatorPendingDeletion = selectedSimulator },
                             onOpenSimulatorOptions: { showSimulatorOptions = true }
                         )
                     }
@@ -324,6 +380,7 @@ struct ContentView: View {
                         SimulatorQuickActionsBar(
                             presenter: presenter,
                             simulator: selectedSimulator,
+                            onDeleteSimulator: { simulatorPendingDeletion = selectedSimulator },
                             onOpenSimulatorOptions: { showSimulatorOptions = true }
                         )
                         VStack(alignment: .leading, spacing: 10) {
@@ -491,6 +548,13 @@ struct ContentView: View {
         return time.formatted(date: .omitted, time: .shortened)
     }
 
+    private var deleteSimulatorConfirmationBinding: Binding<Bool> {
+        Binding(
+            get: { simulatorPendingDeletion != nil },
+            set: { if !$0 { simulatorPendingDeletion = nil } }
+        )
+    }
+
     // MARK: - Shortcuts
 
     private var shortcutButtons: some View {
@@ -513,6 +577,13 @@ struct ContentView: View {
         }
         .onAppear { presenter.focusFirstResult() }
     }
+}
+
+private func formattedByteCount(_ byteCount: Int64) -> String {
+    let formatter = ByteCountFormatter()
+    formatter.allowedUnits = [.useMB, .useGB]
+    formatter.countStyle = .file
+    return formatter.string(fromByteCount: byteCount)
 }
 
 // MARK: - Filter Picker
@@ -601,9 +672,14 @@ private struct SidebarSimulatorRow: View {
                 Text(simulator.name)
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
-                Text("iOS \(simulator.osVersion)")
+                Text("iOS \(simulator.osVersion) • \(shortUDID)")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
+                if let size = simulator.sizeInBytes {
+                    Label(formattedByteCount(size), systemImage: "internaldrive")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                }
             }
 
             Spacer()
@@ -628,6 +704,10 @@ private struct SidebarSimulatorRow: View {
                 .fill(selected ? Color.accentColor.opacity(0.14) : Color.clear)
         )
         .contentShape(Rectangle())
+    }
+
+    private var shortUDID: String {
+        String(simulator.id.suffix(8)).uppercased()
     }
 }
 
@@ -666,6 +746,9 @@ private struct SimulatorSelectionCard: View {
                 HStack(spacing: 10) {
                     Label("iOS \(simulator.osVersion)", systemImage: "gearshape")
                     Label(simulator.deviceType.rawValue, systemImage: "iphone")
+                    if let size = simulator.sizeInBytes {
+                        Label(formattedByteCount(size), systemImage: "internaldrive")
+                    }
                 }
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
@@ -714,6 +797,7 @@ private struct SimulatorSelectionCard: View {
 private struct SimulatorQuickActionsBar: View {
     @ObservedObject var presenter: SimulatorPresenter
     let simulator: SimulatorDevice
+    let onDeleteSimulator: () -> Void
     let onOpenSimulatorOptions: () -> Void
 
     var body: some View {
@@ -751,6 +835,11 @@ private struct SimulatorQuickActionsBar: View {
                     Text(simulator.name)
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
+                    if let size = simulator.sizeInBytes {
+                        Text(formattedByteCount(size))
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
             
@@ -770,8 +859,30 @@ private struct SimulatorQuickActionsBar: View {
                 QuickActionButton(label: "Data Folder", icon: "folder") {
                     Task { await presenter.openSimulatorDataFolder(simulator) }
                 }
+                Button {
+                    Task { await presenter.addMediaToSelectedSimulators() }
+                } label: {
+                    HStack(spacing: 5) {
+                        if presenter.isAddingMedia {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.system(size: 11))
+                        }
+                        Text(presenter.isAddingMedia ? "Adding…" : "Add To Photos")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.bordered)
+                .disabled(presenter.isAddingMedia)
                 QuickActionButton(label: "Erase", icon: "trash") {
                     Task { await presenter.erase(simulator) }
+                }
+                QuickActionButton(label: "Delete", icon: "trash.fill", tint: .red) {
+                    onDeleteSimulator()
                 }
             }
         }
@@ -787,6 +898,7 @@ private struct SimulatorQuickActionsBar: View {
 private struct QuickActionButton: View {
     let label: String
     let icon: String
+    var tint: Color? = nil
     let action: () -> Void
 
     var body: some View {
@@ -799,6 +911,7 @@ private struct QuickActionButton: View {
             .padding(.vertical, 6)
         }
         .buttonStyle(.bordered)
+        .tint(tint)
     }
 }
 
@@ -1096,7 +1209,7 @@ private struct AppAdvancedPopup: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.25), lineWidth: 1)
         )
-        .frame(minWidth: 720, minHeight: 560)
+        .frame(minWidth: 720, minHeight: 640)
     }
 }
 
@@ -1149,7 +1262,7 @@ private struct SimulatorAdvancedPopup: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.25), lineWidth: 1)
         )
-        .frame(minWidth: 720, minHeight: 560)
+        .frame(minWidth: 720, minHeight: 640)
     }
 }
 
